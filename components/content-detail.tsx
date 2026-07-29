@@ -1,0 +1,401 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { Check, CheckCheck, ChevronDown, ChevronLeft, ChevronRight, Plus, Star, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTracking } from "@/src/lib/tracking/client";
+import { episodeKey } from "@/src/lib/tracking/types";
+import type { ContentDetails, Episode } from "@/types/media";
+import type { MediaItem } from "@/src/lib/tmdb/types";
+import { MediaRow } from "./media-row";
+import { SeasonCarousel } from "./season-carousel";
+import { TrailerButton } from "./trailer-button";
+import { WatchProviderCard } from "./watch-provider-card";
+import { Rating } from "./rating";
+
+function EpisodeCard({
+  episode,
+  isWatched,
+  onWatchedChange,
+  href,
+}: {
+  episode: Episode;
+  isWatched: boolean;
+  onWatchedChange: (watched: boolean) => void;
+  href: string;
+}) {
+  return (
+    <article className={`episode-card ${isWatched ? "is-watched" : "is-unwatched"}`}>
+      <Image
+        className="episode-image"
+        src={episode.imageUrl}
+        alt={`Cena do episódio ${episode.number}: ${episode.title}`}
+        fill
+        sizes="(max-width: 700px) 90vw, (max-width: 1000px) 45vw, 415px"
+      />
+      <div className="episode-shade" />
+      {episode.rating && (
+        <button
+          className={`episode-state-button ${isWatched ? "watched-badge" : "unwatched-badge"}`}
+          type="button"
+          aria-label={isWatched ? "Marcar episódio como não assistido" : "Marcar episódio como assistido"}
+          aria-pressed={isWatched}
+          onClick={() => onWatchedChange(!isWatched)}
+        >
+          <Check size={15} strokeWidth={3} />
+          <span className="episode-state-label">
+            {isWatched ? "Marcar como não assistido" : "Marcar como assistido"}
+          </span>
+        </button>
+      )}
+      <Link className="episode-footer episode-detail-link" href={href}>
+        <div>
+          <h3 title={episode.title}>{episode.title}</h3>
+          <p>Episódio {episode.number}</p>
+        </div>
+        {episode.rating ? (
+          <span className="episode-rating"><Star size={15} /> {episode.rating.toFixed(1)}</span>
+        ) : (
+          <span className="release-pill">{episode.releaseLabel}</span>
+        )}
+      </Link>
+    </article>
+  );
+}
+
+export function ContentDetail({
+  content,
+  recommendations = [],
+  canRate = true,
+}: {
+  content: ContentDetails;
+  recommendations?: MediaItem[];
+  canRate?: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [season, setSeason] = useState(content.seasons[0]?.number ?? 1);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const { entry, error, update, updateEpisodes } = useTracking(
+    content.mediaType,
+    content.id,
+    {
+      title: content.title,
+      posterUrl: content.posterUrl,
+    },
+  );
+  const watched = entry?.watched ?? false;
+  const inList = entry?.inList ?? false;
+  const rating = entry?.rating ?? 0;
+  const castRowRef = useRef<HTMLDivElement>(null);
+  const [castScroll, setCastScroll] = useState({
+    canGoBack: false,
+    canGoForward: content.cast.length > 6,
+  });
+  const watchedEpisodeKeys = useMemo(
+    () =>
+      new Set(
+        (entry?.watchedEpisodes ?? []).map((episode) => episodeKey(episode)),
+      ),
+    [entry?.watchedEpisodes],
+  );
+  const watchedEpisodes = useMemo(
+    () =>
+      Object.fromEntries(
+        content.seasons.flatMap((item) =>
+          item.episodes.map((episode) => [
+            episode.id,
+            watchedEpisodeKeys.has(
+              episodeKey({
+                seasonNumber: item.number,
+                episodeNumber: episode.number,
+              }),
+            ),
+          ]),
+        ),
+    ),
+    [content.seasons, watchedEpisodeKeys],
+  );
+  const selectedEpisodes = useMemo(
+    () => content.seasons.find((item) => item.number === season)?.episodes ?? [],
+    [content.seasons, season],
+  );
+  const releasedEpisodes = selectedEpisodes.filter((episode) => episode.rating);
+  const releasedSeriesEpisodes = useMemo(
+    () =>
+      content.seasons.flatMap((item) =>
+        item.episodes.filter((episode) => episode.rating),
+      ),
+    [content.seasons],
+  );
+  const watchedSeriesEpisodes = releasedSeriesEpisodes.filter(
+    (episode) => watchedEpisodes[episode.id],
+  ).length;
+  const seriesProgress =
+    releasedSeriesEpisodes.length > 0
+      ? Math.round(
+          (watchedSeriesEpisodes / releasedSeriesEpisodes.length) * 100,
+        )
+      : 0;
+  const allSeasonWatched =
+    releasedEpisodes.length > 0 && releasedEpisodes.every((episode) => watchedEpisodes[episode.id]);
+
+  useEffect(() => {
+    const row = castRowRef.current;
+    if (!row) return;
+
+    const update = () => {
+      setCastScroll({
+        canGoBack: row.scrollLeft > 1,
+        canGoForward: row.scrollLeft + row.clientWidth < row.scrollWidth - 1,
+      });
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(row);
+    update();
+
+    return () => observer.disconnect();
+  }, [content.cast.length]);
+
+  function toggleSeasonWatched() {
+    updateEpisodes({
+      episodes: releasedEpisodes.map((episode) => ({
+        seasonNumber: season,
+        episodeNumber: episode.number,
+      })),
+      watched: !allSeasonWatched,
+      target: "watched",
+    });
+  }
+
+  function updateCastScroll() {
+    const row = castRowRef.current;
+    if (!row) return;
+
+    setCastScroll({
+      canGoBack: row.scrollLeft > 1,
+      canGoForward: row.scrollLeft + row.clientWidth < row.scrollWidth - 1,
+    });
+  }
+
+  function scrollCast(direction: -1 | 1) {
+    const row = castRowRef.current;
+    if (!row) return;
+    row.scrollBy({
+      left: direction * Math.max(row.clientWidth - 80, 160),
+      behavior: "smooth",
+    });
+  }
+
+  return (
+    <>
+      <section className="detail-hero" style={{ "--detail-backdrop": `url(${content.backdropUrl})` } as React.CSSProperties}>
+        <div className="container detail-hero-content">
+          <aside className="detail-poster-card">
+            <div className="detail-poster">
+              <Image src={content.posterUrl} alt={`Pôster de ${content.title}`} fill priority sizes="363px" />
+            </div>
+            <WatchProviderCard availability={content.watchAvailability} />
+          </aside>
+
+          <div className="detail-copy">
+            <div className="detail-title-row">
+              <h1>{content.title}</h1>
+              {content.mediaType === "tv" && (
+                <div
+                  className="series-progress"
+                  role="progressbar"
+                  aria-label={`${watchedSeriesEpisodes} de ${releasedSeriesEpisodes.length} episódios assistidos`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={seriesProgress}
+                  style={{ "--series-progress": `${seriesProgress * 3.6}deg` } as React.CSSProperties}
+                >
+                  <div className="series-progress-content">
+                    <strong>{seriesProgress}%</strong>
+                    <span>Concluído</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="detail-ratings">
+              <Rating value={content.audienceScore} />
+              <i />
+              <span><b className="imdb">IMDb</b> {content.imdbRating.toFixed(1)}</span>
+              <i />
+              <span>{content.year}</span>
+              <i />
+              <span>{content.status}</span>
+            </div>
+            <div className="detail-tags-rate">
+              <div className="genre-tags">{content.genres.map((genre) => <span key={genre}>{genre}</span>)}</div>
+              {canRate && (
+                <>
+                  <span className="rate-label">Avaliar</span>
+                  <span className="rate-stars" aria-label="Avaliar conteúdo" onMouseLeave={() => setHoveredRating(0)}>
+                    {[1, 2, 3, 4, 5].map((value) => {
+                      const active = value <= (hoveredRating || rating);
+
+                      return (
+                        <button
+                          className={active ? "active" : ""}
+                          key={value}
+                          type="button"
+                          aria-label={`Avaliar com ${value} ${value === 1 ? "estrela" : "estrelas"}`}
+                          aria-pressed={rating === value}
+                          onClick={() => update({ rating: value, inList: true })}
+                          onFocus={() => setHoveredRating(value)}
+                          onBlur={() => setHoveredRating(0)}
+                          onMouseEnter={() => setHoveredRating(value)}
+                        >
+                          <Star size={17} />
+                        </button>
+                      );
+                    })}
+                  </span>
+                </>
+              )}
+            </div>
+            <p className="detail-tagline">{content.tagline}</p>
+            <div className="detail-actions">
+              <button className={`detail-button primary ${watched ? "active" : ""}`} onClick={() => update({ watched: !watched, inList: true })} type="button">
+                <CheckCheck size={20} /> {watched ? "Assistido" : "Marcar como assistido"}
+              </button>
+              <button className={`detail-button ${inList ? "in-list" : ""}`} onClick={() => update({ inList: !inList })} type="button">
+                {inList ? <X size={20} /> : <Plus size={20} />} {inList ? "Remover da minha lista" : "Minha lista"}
+              </button>
+              <span className="action-divider" />
+              <TrailerButton contentTitle={content.title} trailer={content.trailer} />
+            </div>
+            {error && (
+              <p className="tracking-error" role="status">
+                Não foi possível sincronizar seu progresso.
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <main className="container detail-body">
+        <section className="synopsis-section">
+          <div className="synopsis-copy">
+            <h2>Sinopse</h2>
+            <p>{content.synopsis[0]}</p>
+            {expanded && content.synopsis[1] && <p>{content.synopsis[1]}</p>}
+            {content.synopsis[1] && (
+              <button className="read-more" onClick={() => setExpanded((value) => !value)} type="button">
+                {expanded ? "Ler menos" : "Ler mais"} <ChevronDown className={expanded ? "rotated" : ""} size={15} />
+              </button>
+            )}
+          </div>
+          <dl className="metadata-card">
+            {content.mediaType !== "movie" && (
+              <div><dt>Temporadas</dt><dd>{content.metadata.seasons}</dd></div>
+            )}
+            <div><dt>Lançamento</dt><dd>{content.metadata.releaseDate}</dd></div>
+            <div><dt>Classificação</dt><dd>{content.metadata.certification}</dd></div>
+            <div><dt>Emissora</dt><dd>{content.metadata.network}</dd></div>
+          </dl>
+        </section>
+
+        <section className="cast-section">
+          <h2>{content.mediaType === "tv" ? "Elenco da Série" : "Elenco Principal"}</h2>
+          {content.cast.length > 0 ? (
+            <div className={`cast-carousel ${castScroll.canGoBack ? "can-go-back" : ""} ${castScroll.canGoForward ? "can-go-forward" : ""}`}>
+              <div className="cast-row" ref={castRowRef} onScroll={updateCastScroll}>
+                {content.cast.map((person) => (
+                  <article className="cast-card" key={person.id}>
+                    <Image src={person.photoUrl} alt={person.name} width={160} height={210} />
+                    <div className="cast-card-body">
+                      <h3 title={person.name}>{person.name}</h3>
+                      <p className="cast-character" title={person.character}>{person.character}</p>
+                      {person.episodeCount !== undefined && (
+                        <p className="cast-episode-count">
+                          {person.episodeCount} {person.episodeCount === 1 ? "episódio" : "episódios"}
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+              {castScroll.canGoBack && (
+                <button className="cast-scroll-button previous" type="button" aria-label="Ver integrantes anteriores do elenco" onClick={() => scrollCast(-1)}>
+                  <ChevronLeft size={22} />
+                </button>
+              )}
+              {castScroll.canGoForward && (
+                <button className="cast-scroll-button next" type="button" aria-label="Ver mais integrantes do elenco" onClick={() => scrollCast(1)}>
+                  <ChevronRight size={22} />
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="detail-empty">Elenco não disponível.</p>
+          )}
+        </section>
+
+        {content.mediaType === "tv" && content.seasons.length > 0 && (
+          <section className="episodes-section">
+          <div className="episodes-head">
+            <h2>Episódios</h2>
+            <button
+              className={`mark-season ${allSeasonWatched ? "active" : ""}`}
+              type="button"
+              onClick={toggleSeasonWatched}
+              aria-pressed={allSeasonWatched}
+              aria-label={allSeasonWatched ? "Desmarcar todos os episódios" : "Marcar temporada como concluída"}
+            >
+              {allSeasonWatched ? (
+                <>
+                  <span className="mark-season-default">Temporada concluída</span>
+                  <span className="mark-season-hover">Desmarcar</span>
+                </>
+              ) : (
+                <span>Temporada concluída</span>
+              )}
+              <CheckCheck size={20} />
+            </button>
+            <SeasonCarousel
+              seasons={content.seasons}
+              activeSeason={season}
+              onSelect={(item) => setSeason(item.number)}
+            />
+          </div>
+          <div className="episodes-grid">
+            {selectedEpisodes.map((episode) => (
+              <EpisodeCard
+                episode={episode}
+                href={`/series/${content.id}/season/${season}/episode/${episode.number}`}
+                isWatched={Boolean(watchedEpisodes[episode.id])}
+                key={episode.id}
+                onWatchedChange={(value) =>
+                  updateEpisodes({
+                    episodes: [
+                      {
+                        seasonNumber: season,
+                        episodeNumber: episode.number,
+                      },
+                    ],
+                    watched: value,
+                    target: "watched",
+                  })
+                }
+              />
+            ))}
+          </div>
+          </section>
+        )}
+
+        <section className="recommendations-section">
+          <h2>Você também pode gostar</h2>
+          {recommendations.length > 0 ? (
+            <MediaRow items={recommendations} />
+          ) : (
+            <p className="detail-empty">Nenhuma recomendação disponível.</p>
+          )}
+        </section>
+      </main>
+
+    </>
+  );
+}
