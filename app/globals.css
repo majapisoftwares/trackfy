@@ -88,7 +88,7 @@ a {
 
 .header-nav {
   display: flex;
-  width: 768px;
+  width: 900px;
   align-items: center;
   gap: 42px;
 }
@@ -371,7 +371,11 @@ a {
   color: #d4d4d8;
   font-size: 18px;
   line-height: 1.4;
+  display: -webkit-box;
+  overflow: hidden;
   overflow-wrap: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
 }
 
 .hero-actions {
@@ -441,6 +445,85 @@ a {
 
 .content-section {
   scroll-margin-top: 24px;
+}
+
+.streaming-section {
+  scroll-margin-top: 24px;
+}
+
+.streaming-title {
+  margin: 0 0 19px;
+  color: #fff;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  letter-spacing: -0.012em;
+}
+
+.streaming-cards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.streaming-card {
+  display: flex;
+  height: 79px;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #3f3f46;
+  border-radius: 16px;
+  background: rgba(31, 31, 36, 0.54);
+  padding: 16px 12px;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.streaming-card:hover {
+  border-color: #a1a1aa;
+  background: rgba(63, 63, 70, 0.72);
+}
+
+.streaming-card:hover {
+  transform: translateY(-2px);
+}
+
+.streaming-card:focus-visible {
+  outline: 2px solid #fafafa;
+  outline-offset: 4px;
+}
+
+.streaming-card img {
+  display: block;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.streaming-logo-netflix {
+  width: 140px;
+  height: 41px;
+}
+
+.streaming-logo-prime-video,
+.streaming-logo-paramount-plus {
+  width: 116px;
+  height: auto;
+}
+
+.streaming-logo-prime-video {
+  filter: brightness(0) invert(1);
+}
+
+.streaming-logo-disney-plus {
+  width: 102px;
+  height: 58px;
+}
+
+.streaming-logo-apple-tv-plus {
+  width: 61px;
+  height: 61px;
 }
 
 .section-head {
@@ -651,11 +734,6 @@ a {
   font-weight: 600;
 }
 
-.continue-rating svg {
-  fill: var(--gold);
-  color: var(--gold);
-}
-
 .media-card {
   flex: 0 1 calc((100% - 72px) / 5);
   min-width: 0;
@@ -752,8 +830,9 @@ a {
   line-height: 23px;
 }
 
-.score-indicator svg {
+.score-icon {
   flex: none;
+  fill: currentColor;
 }
 
 .score-low {
@@ -1175,6 +1254,12 @@ a {
   object-fit: cover;
 }
 
+@property --series-progress {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 .series-progress {
   --series-progress: 0deg;
   position: relative;
@@ -1192,6 +1277,25 @@ a {
   box-shadow:
     0 14px 38px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: --series-progress 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.series-progress.is-completing {
+  animation: series-progress-complete 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes series-progress-complete {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  45% {
+    transform: scale(1.06);
+    box-shadow:
+      0 16px 42px rgba(0, 0, 0, 0.54),
+      0 0 0 8px rgba(34, 197, 94, 0.16);
+  }
 }
 
 .series-progress::before {
@@ -1495,6 +1599,13 @@ a {
 
 .detail-button.in-list:hover {
   background: #2a1215;
+}
+
+.detail-button.archived,
+.detail-button.archived:hover {
+  border-color: #166534;
+  background: #14532d;
+  color: #dcfce7;
 }
 
 .detail-button:disabled {
@@ -2040,7 +2151,7 @@ a {
 }
 
 .watched-badge {
-  background: rgba(9, 9, 11, 0.72);
+  background: #16a34a;
 }
 
 .unwatched-badge {
@@ -2076,7 +2187,7 @@ a {
 }
 
 .watched-badge:hover {
-  background: rgba(9, 9, 11, 0.88);
+  background: #15803d;
 }
 
 .unwatched-badge:hover {
@@ -2130,11 +2241,6 @@ a {
   gap: 4px;
   font-size: 14px;
   font-weight: 600;
-}
-
-.episode-rating svg {
-  fill: #f59e0b;
-  color: #f59e0b;
 }
 
 .release-pill {
@@ -2530,6 +2636,22 @@ a {
     scrollbar-width: none;
   }
 
+  .streaming-cards {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .streaming-cards::-webkit-scrollbar {
+    display: none;
+  }
+
+  .streaming-card {
+    width: 148px;
+    flex: 0 0 148px;
+  }
+
   .continue-row {
     grid-auto-columns: minmax(280px, 42vw);
     grid-auto-flow: column;
@@ -2766,6 +2888,7 @@ a {
   .hero-description {
     font-size: 16px;
     line-height: 1.45;
+    -webkit-line-clamp: 3;
   }
 
   .hero-actions {

@@ -16,7 +16,7 @@ export function WatchProviderCard({
         <Tv aria-hidden="true" size={21} />
         <span>
           <strong>Onde assistir</strong>
-          <small>Não disponível no Brasil</small>
+          <small>Não disponível digitalmente</small>
         </span>
       </div>
     );

@@ -16,6 +16,7 @@ type TrackingEntryDocument = {
   title: string;
   posterUrl: string | null;
   inList: boolean;
+  archived?: boolean;
   watched: boolean;
   rating: number | null;
   watchedEpisodes: TrackedEpisode[];
@@ -56,6 +57,7 @@ function toTrackingEntry(document: TrackingEntryDocument): TrackingEntry {
     title: document.title,
     posterUrl: document.posterUrl,
     inList: document.inList,
+    archived: document.archived ?? false,
     watched: document.watched,
     rating: document.rating,
     watchedEpisodes: document.watchedEpisodes,
@@ -117,6 +119,23 @@ export async function listTrackingEntries(
   };
 }
 
+export async function listArchivedTrackingEntries(
+  ownerId: string,
+  options: { limit: number; offset: number },
+): Promise<{ items: TrackingEntry[]; total: number }> {
+  const collection = await getTrackingCollection();
+  const filter: Filter<TrackingEntryDocument> = {
+    ownerId,
+    $or: [{ archived: true }, { watched: true }],
+  };
+  const [documents, total] = await Promise.all([
+    collection.find(filter).sort({ updatedAt: -1 }).skip(options.offset).limit(options.limit).toArray(),
+    collection.countDocuments(filter),
+  ]);
+
+  return { items: documents.map(toTrackingEntry), total };
+}
+
 export async function updateTrackingEntry(
   ownerId: string,
   mediaType: TrackingMediaType,
@@ -132,6 +151,7 @@ export async function updateTrackingEntry(
 
   if (patch.posterUrl !== undefined) setValues.posterUrl = patch.posterUrl;
   if (patch.inList !== undefined) setValues.inList = patch.inList;
+  if (patch.archived !== undefined) setValues.archived = patch.archived;
   if (patch.watched !== undefined) setValues.watched = patch.watched;
   if (patch.rating !== undefined) setValues.rating = patch.rating;
 
@@ -145,6 +165,7 @@ export async function updateTrackingEntry(
         mediaId,
         ...(patch.posterUrl === undefined ? { posterUrl: null } : {}),
         ...(patch.inList === undefined ? { inList: false } : {}),
+        ...(patch.archived === undefined ? { archived: false } : {}),
         ...(patch.watched === undefined ? { watched: false } : {}),
         ...(patch.rating === undefined ? { rating: null } : {}),
         watchedEpisodes: [],
@@ -223,6 +244,7 @@ export async function mergeTrackingOwners(
             title: targetEntry.title || sourceEntry.title,
             posterUrl: targetEntry.posterUrl ?? sourceEntry.posterUrl,
             inList: targetEntry.inList || sourceEntry.inList,
+            archived: (targetEntry.archived ?? false) || (sourceEntry.archived ?? false),
             watched: targetEntry.watched || sourceEntry.watched,
             rating: targetEntry.rating ?? sourceEntry.rating,
             watchedEpisodes: mergeEpisodes(
@@ -259,6 +281,7 @@ export async function mergeTrackingOwners(
             title: sourceEntry.title,
             posterUrl: sourceEntry.posterUrl,
             inList: sourceEntry.inList,
+            archived: sourceEntry.archived ?? false,
             watched: sourceEntry.watched,
             rating: sourceEntry.rating,
             watchedEpisodes: sourceEntry.watchedEpisodes,

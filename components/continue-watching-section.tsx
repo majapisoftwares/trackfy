@@ -68,7 +68,11 @@ export function ContinueWatchingSection({
                     </span>
                   </span>
                   {item.voteAverage > 0 && (
-                    <Rating value={item.voteAverage} className="continue-rating" />
+                    <Rating
+                      value={item.voteAverage}
+                      className="continue-rating"
+                      icon="status"
+                    />
                   )}
                 </Link>
               </article>

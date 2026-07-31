@@ -75,7 +75,11 @@ export function EpisodeDetail({
       >
         <div className="container episode-hero-content">
           <aside className="episode-poster-card">
-            <div className="episode-poster">
+            <Link
+              className="episode-poster"
+              href={`/series/${episode.showId}`}
+              aria-label={`Ver página da série ${episode.showTitle}`}
+            >
               <Image
                 src={episode.posterUrl}
                 alt={`Pôster de ${episode.showTitle}`}
@@ -83,7 +87,7 @@ export function EpisodeDetail({
                 priority
                 sizes="363px"
               />
-            </div>
+            </Link>
             <WatchProviderCard availability={episode.watchAvailability} />
           </aside>
 
@@ -279,6 +283,7 @@ export function EpisodeDetail({
                       <Rating
                         value={item.voteAverage}
                         className="episode-rating"
+                        icon="status"
                       />
                     ) : (
                       <span className="release-pill">

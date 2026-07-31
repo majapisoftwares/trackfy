@@ -63,6 +63,7 @@ export type ContentDetails = {
     releaseDate: string;
     certification: string;
     network: string;
+    duration?: string;
   };
   cast: CastMember[];
   seasons: Array<{

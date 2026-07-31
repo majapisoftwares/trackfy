@@ -84,3 +84,20 @@ export function MyListNav() {
     </Link>
   );
 }
+
+export function ArchivedNav() {
+  const session = useQuery({
+    queryKey: ["auth-session"],
+    queryFn: fetchSession,
+    retry: false,
+    staleTime: 60_000,
+  });
+
+  if (session.isPending || !session.data?.user) return null;
+
+  return (
+    <Link className="nav-link" href="/arquivados">
+      Arquivados
+    </Link>
+  );
+}

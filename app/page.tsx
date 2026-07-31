@@ -6,6 +6,7 @@ import {
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { HeroBanner } from "@/components/hero-banner";
+import { StreamingSection } from "@/components/streaming-section";
 import { AUTH_COOKIE_NAME } from "@/src/lib/auth/session";
 import { findAuthUserBySessionToken } from "@/src/lib/auth/repository";
 import { mapMovie, mapTVShow } from "@/src/lib/tmdb/mappers";
@@ -253,6 +254,7 @@ export default async function Home() {
                   items={data.top}
                   showAll={false}
                 />
+                <StreamingSection />
               </>
             ) : (
               <>
@@ -288,6 +290,7 @@ export default async function Home() {
                 items={data.top}
                 showAll={false}
               />
+              <StreamingSection />
               </>
             )
           ) : (
@@ -303,6 +306,7 @@ export default async function Home() {
               <ContentSection title="Seriados populares" subtitle="As séries mais populares do momento" items={data.popularTVShows} href="/series/populares" />
               <ContentSection title="Animes populares" subtitle="Animações japonesas em destaque no catálogo" items={data.popularAnime} href="/animes/populares" />
               <ContentSection title="Top 5 no Trackfy" subtitle="As produções mais assistidas no Trackfy nas últimas 24 horas" items={data.top} showAll={false} />
+              <StreamingSection />
             </>
           )}
         </div>

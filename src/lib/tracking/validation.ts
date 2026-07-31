@@ -6,7 +6,7 @@ import type {
 
 const MAX_TITLE_LENGTH = 300;
 const MAX_POSTER_URL_LENGTH = 2_000;
-const MAX_EPISODES_PER_REQUEST = 200;
+const MAX_EPISODES_PER_REQUEST = 2_000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -54,6 +54,9 @@ export function parseTrackingEntryPatch(
   if (value.inList !== undefined && typeof value.inList !== "boolean") {
     return null;
   }
+  if (value.archived !== undefined && typeof value.archived !== "boolean") {
+    return null;
+  }
   if (value.watched !== undefined && typeof value.watched !== "boolean") {
     return null;
   }
@@ -72,6 +75,7 @@ export function parseTrackingEntryPatch(
     title,
     ...(posterUrl !== undefined ? { posterUrl } : {}),
     ...(typeof value.inList === "boolean" ? { inList: value.inList } : {}),
+    ...(typeof value.archived === "boolean" ? { archived: value.archived } : {}),
     ...(typeof value.watched === "boolean" ? { watched: value.watched } : {}),
     ...(value.rating === null || typeof value.rating === "number"
       ? { rating: value.rating }

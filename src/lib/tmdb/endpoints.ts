@@ -24,6 +24,7 @@ const CACHE = {
   season: 6 * 60 * 60,
   recommendations: 60 * 60,
   search: 60,
+  streaming: 60 * 60,
 } as const;
 
 const EXCLUDED_EDITORIAL_GENRES = new Set([
@@ -450,6 +451,102 @@ export async function getPopularTVShows(): Promise<MediaItem[]> {
     revalidate: CACHE.popular,
   });
   return data.results.map(mapTVShow).filter(isEditorialMedia);
+}
+
+export async function getOriginalTVShowsByNetwork(
+  networkId: number,
+): Promise<MediaItem[]> {
+  const data = await tmdbFetch<TMDBListResponse<TMDBTVShow>>("/discover/tv", {
+    query: {
+      with_networks: networkId,
+      region: "BR",
+      sort_by: "popularity.desc",
+      include_adult: false,
+      without_keywords: [
+        ...EXCLUDED_TV_KEYWORDS,
+        ...BLOCKED_CONTENT_KEYWORDS,
+      ].join("|"),
+    },
+    revalidate: CACHE.streaming,
+  });
+
+  return filterAllowedMedia(
+    data.results.map(mapTVShow).filter(isEditorialMedia).slice(0, 8),
+  ).then((items) => items.slice(0, 5));
+}
+
+export async function getStreamingMediaPage(
+  providerId: number,
+  page = 1,
+  filters: CatalogFilters = {},
+): Promise<PaginatedMedia> {
+  const movieQuery = {
+    ...getCatalogQuery(page, filters),
+    with_watch_providers: providerId,
+    watch_region: "BR",
+    region: "BR",
+    primary_release_year: filters.year,
+  };
+  const tvQuery = {
+    ...getCatalogQuery(page, filters, "first_air_date.desc"),
+    with_watch_providers: providerId,
+    watch_region: "BR",
+    with_genres: getTVGenre(filters.genre),
+    first_air_date_year: filters.year,
+    without_keywords: [
+      ...EXCLUDED_TV_KEYWORDS,
+      ...BLOCKED_CONTENT_KEYWORDS,
+    ].join("|"),
+  };
+
+  if (filters.mediaType === "movie") {
+    const data = await tmdbFetch<TMDBListResponse<TMDBMovie>>("/discover/movie", {
+      query: movieQuery,
+      revalidate: CACHE.streaming,
+    });
+    return mapPage(data, mapMovie);
+  }
+
+  if (filters.mediaType === "tv") {
+    const data = await tmdbFetch<TMDBListResponse<TMDBTVShow>>("/discover/tv", {
+      query: tvQuery,
+      revalidate: CACHE.streaming,
+    });
+    const mapped = mapPage(data, mapTVShow);
+    return {
+      ...mapped,
+      results: mapped.results.filter(isEditorialMedia),
+    };
+  }
+
+  const [movies, shows] = await Promise.all([
+    tmdbFetch<TMDBListResponse<TMDBMovie>>("/discover/movie", {
+      query: movieQuery,
+      revalidate: CACHE.streaming,
+    }),
+    tmdbFetch<TMDBListResponse<TMDBTVShow>>("/discover/tv", {
+      query: tvQuery,
+      revalidate: CACHE.streaming,
+    }),
+  ]);
+  const results = [
+    ...movies.results.map(mapMovie),
+    ...shows.results.map(mapTVShow).filter(isEditorialMedia),
+  ]
+    .sort(
+      (left, right) =>
+        right.popularity - left.popularity ||
+        right.voteAverage - left.voteAverage ||
+        left.id - right.id,
+    )
+    .slice(0, 20);
+
+  return {
+    page,
+    results,
+    totalPages: Math.min(Math.max(movies.total_pages, shows.total_pages), 500),
+    totalResults: movies.total_results + shows.total_results,
+  };
 }
 
 export async function getPopularTVShowsPage(

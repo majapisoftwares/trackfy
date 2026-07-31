@@ -43,6 +43,7 @@ function createOptimisticEntry(
     title: metadata.title,
     posterUrl: metadata.posterUrl ?? null,
     inList: false,
+    archived: false,
     watched: false,
     rating: null,
     watchedEpisodes: [],

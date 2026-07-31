@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, CheckCheck, ChevronDown, ChevronLeft, ChevronRight, Plus, Star, X } from "lucide-react";
+import { Archive, Check, CheckCheck, ChevronDown, ChevronLeft, ChevronRight, Plus, Star, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTracking } from "@/src/lib/tracking/client";
 import { episodeKey } from "@/src/lib/tracking/types";
@@ -55,7 +55,7 @@ function EpisodeCard({
           <p>Episódio {episode.number}</p>
         </div>
         {episode.rating ? (
-          <span className="episode-rating"><Star size={15} /> {episode.rating.toFixed(1)}</span>
+          <Rating value={episode.rating} className="episode-rating" />
         ) : (
           <span className="release-pill">{episode.releaseLabel}</span>
         )}
@@ -74,6 +74,7 @@ export function ContentDetail({
   canRate?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [isSeriesCompleting, setIsSeriesCompleting] = useState(false);
   const [season, setSeason] = useState(content.seasons[0]?.number ?? 1);
   const [hoveredRating, setHoveredRating] = useState(0);
   const { entry, error, update, updateEpisodes } = useTracking(
@@ -85,6 +86,7 @@ export function ContentDetail({
     },
   );
   const watched = entry?.watched ?? false;
+  const archived = entry?.archived ?? false;
   const inList = entry?.inList ?? false;
   const rating = entry?.rating ?? 0;
   const castRowRef = useRef<HTMLDivElement>(null);
@@ -128,6 +130,18 @@ export function ContentDetail({
       ),
     [content.seasons],
   );
+  const allReleasedEpisodeKeys = useMemo(
+    () =>
+      content.seasons.flatMap((item) =>
+        item.episodes
+          .filter((episode) => episode.rating)
+          .map((episode) => ({
+            seasonNumber: item.number,
+            episodeNumber: episode.number,
+          })),
+      ),
+    [content.seasons],
+  );
   const watchedSeriesEpisodes = releasedSeriesEpisodes.filter(
     (episode) => watchedEpisodes[episode.id],
   ).length;
@@ -139,6 +153,7 @@ export function ContentDetail({
       : 0;
   const allSeasonWatched =
     releasedEpisodes.length > 0 && releasedEpisodes.every((episode) => watchedEpisodes[episode.id]);
+  const canArchive = inList || watched || watchedSeriesEpisodes > 0;
 
   useEffect(() => {
     const row = castRowRef.current;
@@ -166,6 +181,23 @@ export function ContentDetail({
       watched: !allSeasonWatched,
       target: "watched",
     });
+  }
+
+  function toggleSeriesWatched() {
+    const nextWatched = !watched;
+    if (content.mediaType === "tv" && nextWatched) {
+      setIsSeriesCompleting(true);
+      window.setTimeout(() => setIsSeriesCompleting(false), 900);
+    }
+    update({ watched: nextWatched, inList: nextWatched || inList });
+
+    if (content.mediaType === "tv" && allReleasedEpisodeKeys.length > 0) {
+      updateEpisodes({
+        episodes: allReleasedEpisodeKeys,
+        watched: nextWatched,
+        target: "watched",
+      });
+    }
   }
 
   function updateCastScroll() {
@@ -203,7 +235,7 @@ export function ContentDetail({
               <h1>{content.title}</h1>
               {content.mediaType === "tv" && (
                 <div
-                  className="series-progress"
+                  className={`series-progress ${isSeriesCompleting ? "is-completing" : ""}`}
                   role="progressbar"
                   aria-label={`${watchedSeriesEpisodes} de ${releasedSeriesEpisodes.length} episódios assistidos`}
                   aria-valuemin={0}
@@ -258,12 +290,17 @@ export function ContentDetail({
             </div>
             <p className="detail-tagline">{content.tagline}</p>
             <div className="detail-actions">
-              <button className={`detail-button primary ${watched ? "active" : ""}`} onClick={() => update({ watched: !watched, inList: true })} type="button">
+              <button className={`detail-button primary ${watched ? "active" : ""}`} onClick={toggleSeriesWatched} type="button">
                 <CheckCheck size={20} /> {watched ? "Assistido" : "Marcar como assistido"}
               </button>
               <button className={`detail-button ${inList ? "in-list" : ""}`} onClick={() => update({ inList: !inList })} type="button">
                 {inList ? <X size={20} /> : <Plus size={20} />} {inList ? "Remover da minha lista" : "Minha lista"}
               </button>
+              {canArchive && (
+                <button className={`detail-button ${archived ? "archived" : ""}`} onClick={() => update({ archived: !archived })} type="button">
+                  <Archive size={20} /> {archived ? "Desarquivar" : "Arquivar"}
+                </button>
+              )}
               <span className="action-divider" />
               <TrailerButton contentTitle={content.title} trailer={content.trailer} />
             </div>
@@ -291,6 +328,9 @@ export function ContentDetail({
           <dl className="metadata-card">
             {content.mediaType !== "movie" && (
               <div><dt>Temporadas</dt><dd>{content.metadata.seasons}</dd></div>
+            )}
+            {content.mediaType === "movie" && (
+              <div><dt>Duração</dt><dd>{content.metadata.duration ?? "Não informada"}</dd></div>
             )}
             <div><dt>Lançamento</dt><dd>{content.metadata.releaseDate}</dd></div>
             <div><dt>Classificação</dt><dd>{content.metadata.certification}</dd></div>

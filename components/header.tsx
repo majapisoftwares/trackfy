@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AuthNav, MyListNav } from "./auth/auth-nav";
+import { ArchivedNav, AuthNav, MyListNav } from "./auth/auth-nav";
 import { SearchInput } from "./search-input";
 
 export function Header() {
@@ -28,6 +28,7 @@ export function Header() {
           </Link>
         )}
         <MyListNav />
+        <ArchivedNav />
         <Link className="nav-link" href="/populares">
           Populares
         </Link>

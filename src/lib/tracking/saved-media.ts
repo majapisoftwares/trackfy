@@ -1,7 +1,7 @@
 import type { CatalogFilters } from "@/src/lib/tmdb/endpoints";
 import { getMovieDetails, getTVShowDetails } from "@/src/lib/tmdb/endpoints";
 import type { MediaItem } from "@/src/lib/tmdb/types";
-import { listTrackingEntries } from "./repository";
+import { listArchivedTrackingEntries, listTrackingEntries } from "./repository";
 
 type SavedMedia = MediaItem & {
   originalLanguage?: string;
@@ -64,16 +64,11 @@ function sortSavedMedia(items: SavedMedia[], sort: string | undefined): SavedMed
   });
 }
 
-export async function getSavedMediaPage(
-  ownerId: string,
+async function getTrackedMediaPage(
+  tracked: Awaited<ReturnType<typeof listTrackingEntries>>,
   page: number,
   filters: CatalogFilters,
 ): Promise<{ page: number; results: MediaItem[]; totalPages: number }> {
-  const tracked = await listTrackingEntries(ownerId, {
-    inList: true,
-    limit: 1_000,
-    offset: 0,
-  });
   const resolved = await Promise.all(
     tracked.items.map(async (entry) => {
       try {
@@ -99,4 +94,29 @@ export async function getSavedMediaPage(
     results: items.slice((currentPage - 1) * pageSize, currentPage * pageSize),
     totalPages,
   };
+}
+
+export async function getSavedMediaPage(
+  ownerId: string,
+  page: number,
+  filters: CatalogFilters,
+): Promise<{ page: number; results: MediaItem[]; totalPages: number }> {
+  const tracked = await listTrackingEntries(ownerId, {
+    inList: true,
+    limit: 1_000,
+    offset: 0,
+  });
+  return getTrackedMediaPage(tracked, page, filters);
+}
+
+export async function getArchivedMediaPage(
+  ownerId: string,
+  page: number,
+  filters: CatalogFilters,
+): Promise<{ page: number; results: MediaItem[]; totalPages: number }> {
+  const tracked = await listArchivedTrackingEntries(ownerId, {
+    limit: 1_000,
+    offset: 0,
+  });
+  return getTrackedMediaPage(tracked, page, filters);
 }

@@ -1,15 +1,26 @@
-import { Info, Plus } from "lucide-react";
+"use client";
+
+import { Check, Info, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
+import { useTracking } from "@/src/lib/tracking/client";
 import type { MediaItem } from "@/src/lib/tmdb/types";
 import { Rating } from "./rating";
 
 export function HeroBanner({ item }: { item: MediaItem }) {
+  const router = useRouter();
   const backdropUrl = getTMDBImageUrl(item.backdropPath, "original");
   const href =
     item.mediaType === "movie" ? `/movie/${item.id}` : `/series/${item.id}`;
   const typeLabel = item.mediaType === "movie" ? "Filme" : "Série";
+  const posterUrl = getTMDBImageUrl(item.posterPath, "w500");
+  const { entry, update } = useTracking(item.mediaType, item.id, {
+    title: item.title,
+    posterUrl,
+  });
+  const inList = entry?.inList ?? false;
 
   return (
     <>
@@ -37,9 +48,19 @@ export function HeroBanner({ item }: { item: MediaItem }) {
           {item.overview || "Sinopse indisponível para este título."}
         </p>
         <div className="hero-actions">
-          <button className="hero-button primary" type="button">
-            <Plus aria-hidden="true" size={20} />
-            Adicionar à minha lista
+          <button
+            aria-pressed={inList}
+            className={`hero-button primary ${inList ? "active" : ""}`}
+            onClick={() =>
+              update(
+                { inList: !inList },
+                { onSuccess: () => router.refresh() },
+              )
+            }
+            type="button"
+          >
+            {inList ? <Check aria-hidden="true" size={20} /> : <Plus aria-hidden="true" size={20} />}
+            {inList ? "Na minha lista" : "Adicionar à minha lista"}
           </button>
           <Link className="hero-button secondary" href={href}>
             <Info aria-hidden="true" size={20} />

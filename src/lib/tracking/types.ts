@@ -13,6 +13,7 @@ export type TrackingEntry = {
   title: string;
   posterUrl: string | null;
   inList: boolean;
+  archived: boolean;
   watched: boolean;
   rating: number | null;
   watchedEpisodes: TrackedEpisode[];
@@ -25,6 +26,7 @@ export type TrackingEntryPatch = {
   title?: string;
   posterUrl?: string | null;
   inList?: boolean;
+  archived?: boolean;
   watched?: boolean;
   rating?: number | null;
 };

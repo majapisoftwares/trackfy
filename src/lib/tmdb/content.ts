@@ -53,6 +53,16 @@ function formatDate(date: string | undefined): string {
   }).format(parsed);
 }
 
+function formatRuntime(runtime: number | null): string {
+  if (!runtime || runtime < 1) return "Não informada";
+
+  const hours = Math.floor(runtime / 60);
+  const minutes = runtime % 60;
+  if (hours === 0) return `${minutes} min`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}min`;
+}
+
 function selectCertification(
   details: TMDBMovieDetails | TMDBTVShowDetails,
 ): string {
@@ -227,6 +237,7 @@ export async function getTMDBContentPage(
           certification: selectCertification(details),
           network:
             details.production_companies[0]?.name ?? "Não informada",
+          duration: formatRuntime(details.runtime),
         },
         cast: mapCast(details.credits),
         seasons: [],
