@@ -102,7 +102,7 @@ export function EpisodeDetail({
               <span>
                 <b className="imdb">IMDb</b> {episode.voteAverage.toFixed(1)}
               </span>
-              {canRate && (
+              {canRate && isAuthenticated && (
                 <>
                   <i />
                   <span className="rate-label">Avaliar</span>

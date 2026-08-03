@@ -3696,10 +3696,13 @@ a {
   .site-header {
     position: relative;
     display: grid;
+    width: 100%;
     grid-template-columns: 56px minmax(0, 1fr) 50px 50px;
     align-items: center;
     gap: 12px;
-    padding-top: 20px;
+    margin: 0;
+    background: #09090b;
+    padding: 10px 16px 14px;
     transition: grid-template-columns 240ms ease, column-gap 240ms ease;
   }
 
@@ -3736,6 +3739,15 @@ a {
     outline-offset: 3px;
   }
 
+  .mobile-menu-backdrop {
+    position: fixed;
+    z-index: 50;
+    inset: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: default;
+  }
+
   .header-nav {
     position: fixed;
     z-index: 60;
@@ -3768,6 +3780,11 @@ a {
   .drawer-login-link {
     display: flex;
     order: 1;
+  }
+
+  .drawer-auth .nav-login {
+    display: flex;
+    order: 2;
   }
 
   .header-nav .nav-popular {

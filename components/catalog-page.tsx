@@ -14,6 +14,7 @@ type CatalogPageProps = {
   filters?: Record<string, string | undefined>;
   showFilters?: boolean;
   showMediaTypeFilter?: boolean;
+  showAdvancedFilters?: boolean;
   showQuickActions?: boolean;
 };
 
@@ -26,6 +27,7 @@ export function CatalogPage({
   filters = {},
   showFilters = true,
   showMediaTypeFilter = false,
+  showAdvancedFilters = true,
   showQuickActions = false,
 }: CatalogPageProps) {
   return (
@@ -41,6 +43,7 @@ export function CatalogPage({
             <CatalogFilters
               values={filters}
               showMediaTypeFilter={showMediaTypeFilter}
+              showAdvancedFilters={showAdvancedFilters}
             />
           )}
           {items.length > 0 ? (

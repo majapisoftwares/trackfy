@@ -458,6 +458,54 @@ export async function getPopularMoviesPage(
   return mapPage(data, mapMovie);
 }
 
+export async function getPopularAllPage(
+  page = 1,
+  filters: CatalogFilters = {},
+): Promise<PaginatedMedia> {
+  const movieQuery = {
+    ...getCatalogQuery(page, filters),
+    region: "BR",
+    primary_release_year: filters.year,
+  };
+  const tvQuery = {
+    ...getCatalogQuery(page, filters, "first_air_date.desc"),
+    with_genres: getTVGenre(filters.genre),
+    first_air_date_year: filters.year,
+    without_keywords: [...EXCLUDED_TV_KEYWORDS, ...BLOCKED_CONTENT_KEYWORDS].join("|"),
+  };
+  const [movies, shows] = await Promise.all([
+    tmdbFetch<TMDBListResponse<TMDBMovie>>("/discover/movie", {
+      query: movieQuery,
+      revalidate: CACHE.popular,
+    }),
+    tmdbFetch<TMDBListResponse<TMDBTVShow>>("/discover/tv", {
+      query: tvQuery,
+      revalidate: CACHE.popular,
+    }),
+  ]);
+  const results = [
+    ...movies.results.map(mapMovie),
+    ...shows.results.map(mapTVShow).filter(isEditorialMedia),
+  ]
+    .sort((left, right) => {
+      if (filters.sort === "vote_average.desc") {
+        return right.voteAverage - left.voteAverage || right.popularity - left.popularity;
+      }
+      if (filters.sort === "date.desc") {
+        return (right.year ?? 0) - (left.year ?? 0) || right.popularity - left.popularity;
+      }
+      return right.popularity - left.popularity || right.voteAverage - left.voteAverage;
+    })
+    .slice(0, 20);
+
+  return {
+    page,
+    results,
+    totalPages: Math.min(Math.max(movies.total_pages, shows.total_pages), 500),
+    totalResults: movies.total_results + shows.total_results,
+  };
+}
+
 export async function getPopularTVShows(): Promise<MediaItem[]> {
   const { start, end } = getOnAirDateRange();
   const data = await tmdbFetch<TMDBListResponse<TMDBTVShow>>("/discover/tv", {

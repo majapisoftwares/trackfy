@@ -44,6 +44,14 @@ export function Header({ dashboard = false }: { dashboard?: boolean }) {
       >
         {isMobileMenuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
       </button>
+      {isMobileMenuOpen && (
+        <button
+          aria-label="Fechar menu"
+          className="mobile-menu-backdrop"
+          onClick={() => setIsMobileMenuOpen(false)}
+          type="button"
+        />
+      )}
       <nav
         className={`header-nav ${isMobileMenuOpen ? "is-open" : ""}`}
         id="main-navigation"

@@ -34,11 +34,17 @@ export function AuthNav({ drawer = false }: { drawer?: boolean }) {
   if (!session.data?.user) {
     if (drawer) {
       return (
-        <Link className="nav-link nav-create-account drawer-login-link" href="/criar-conta">
-          <UserPlus aria-hidden="true" className="drawer-nav-icon" size={18} />
-          Crie sua conta
-          <ChevronRight aria-hidden="true" size={18} />
-        </Link>
+        <div className="drawer-auth">
+          <Link className="nav-link nav-create-account drawer-login-link" href="/criar-conta">
+            <UserPlus aria-hidden="true" className="drawer-nav-icon" size={18} />
+            Crie sua conta
+            <ChevronRight aria-hidden="true" size={18} />
+          </Link>
+          <Link className="nav-link nav-login" href="/login">
+            <UserRound aria-hidden="true" className="drawer-nav-icon" size={18} />
+            Entrar
+          </Link>
+        </div>
       );
     }
     return (

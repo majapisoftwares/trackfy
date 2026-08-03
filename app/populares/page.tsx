@@ -2,6 +2,7 @@ import { CatalogPage } from "@/components/catalog-page";
 import { parseCatalogSearchParams } from "@/src/lib/catalog-query";
 import {
   getPopularMoviesPage,
+  getPopularAllPage,
   getPopularTVShowsPage,
   getTrendingAllPage,
 } from "@/src/lib/tmdb/endpoints";
@@ -19,7 +20,9 @@ export default async function PopularPage({
       ? await getPopularMoviesPage(page, filters)
       : filters.mediaType === "tv"
         ? await getPopularTVShowsPage(page, filters)
-        : await getTrendingAllPage(page, filters);
+        : filters.sort
+          ? await getPopularAllPage(page, filters)
+          : await getTrendingAllPage(page, filters);
 
   return (
     <CatalogPage
@@ -29,7 +32,8 @@ export default async function PopularPage({
       currentPage={data.page}
       totalPages={data.totalPages}
       filters={values}
-      showFilters={false}
+      showMediaTypeFilter
+      showAdvancedFilters={false}
       showQuickActions
     />
   );

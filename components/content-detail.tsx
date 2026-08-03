@@ -317,7 +317,7 @@ export function ContentDetail({
             </div>
             <div className="detail-tags-rate">
               <div className="genre-tags">{content.genres.map((genre) => <span key={genre}>{genre}</span>)}</div>
-              {canRate && (
+              {canRate && isAuthenticated && (
                 <>
                   <span className="rate-label">Avaliar</span>
                   <span className="rate-stars" aria-label="Avaliar conteúdo" onMouseLeave={() => setHoveredRating(0)}>
