@@ -76,7 +76,7 @@ export function HeroBanner({ item }: { item: MediaItem }) {
           </button>}
           <Link className="hero-button secondary" href={href}>
             <Info aria-hidden="true" size={20} />
-            Mais informações
+            Ver detalhes
           </Link>
         </div>
       </div>

@@ -36,8 +36,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
-      <body className={geist.variable}>
+    <html lang="pt-BR" className="dark">
+      <body className={`${geist.variable} dark-scrollbar bg-background text-foreground`}>
         <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
