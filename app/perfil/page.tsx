@@ -129,18 +129,16 @@ export default async function ProfilePage() {
                 <h2 id="history-title">Histórico</h2>
                 <p>Últimos conteúdos que você acompanhou</p>
               </div>
+              <Link className="profile-history-all-button" href="/arquivados">
+                Ver todo histórico
+                <ChevronRight aria-hidden="true" size={22} strokeWidth={2.25} />
+              </Link>
             </div>
             {historyItems.length > 0 ? (
               <MediaRow items={historyItems} />
             ) : (
               <p className="profile-history-empty">Seu histórico aparecerá aqui quando você marcar conteúdos como assistidos.</p>
             )}
-            <div className="profile-history-all-action">
-              <Link className="profile-history-all-button" href="/arquivados">
-                Ver todo histórico
-                <ChevronRight aria-hidden="true" size={22} strokeWidth={2.25} />
-              </Link>
-            </div>
           </section>
         </section>
       </section>

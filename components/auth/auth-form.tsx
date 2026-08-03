@@ -4,15 +4,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import type { SessionPayload } from "@/src/lib/auth/client";
 
 type AuthMode = "login" | "register";
 
 type AuthErrorResponse = {
   error?: string;
+  user?: NonNullable<SessionPayload["user"]>;
 };
 
 export function AuthForm({ mode }: { mode: AuthMode }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -44,6 +48,18 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         setMessage(payload.error || "Não foi possível concluir a solicitação.");
         return;
       }
+
+      // A sessão acaba de ser criada no cookie, mas a consulta em memória pode
+      // ainda guardar o estado anônimo. Atualizá-la evita que a interface só
+      // reconheça a conta após um recarregamento manual.
+      if (payload.user) {
+        queryClient.setQueryData<SessionPayload>(["auth-session"], {
+          user: payload.user,
+        });
+      } else {
+        await queryClient.invalidateQueries({ queryKey: ["auth-session"] });
+      }
+      queryClient.removeQueries({ queryKey: ["tracking"] });
 
       router.replace("/");
       router.refresh();

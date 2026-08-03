@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = jsonNoStore({
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email, nickname: user.nickname },
     });
     return establishUserSession(request, response, user);
   } catch (error) {

@@ -2,20 +2,50 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Flame, Home, Menu, X } from "lucide-react";
+import { BookCheck, CalendarDays, Flame, History, Home, Menu, Settings, UserRound, X } from "lucide-react";
 import { useState } from "react";
-import { AuthNav, MyListNav } from "./auth/auth-nav";
+import { useAuthSession } from "@/src/lib/auth/client";
+import { AuthNav } from "./auth/auth-nav";
 import { SearchInput } from "./search-input";
 
+function AuthenticatedDrawerLinks({ onNavigate }: { onNavigate: () => void }) {
+  const session = useAuthSession();
+
+  if (!session.data?.user) return null;
+
+  return (
+    <>
+      <Link className="nav-link drawer-sidebar-link" href="/episodios-para-assistir" onClick={onNavigate}>
+        <CalendarDays aria-hidden="true" className="drawer-nav-icon" size={18} />
+        Calendário
+      </Link>
+      <Link className="nav-link drawer-sidebar-link" href="/minha-lista" onClick={onNavigate}>
+        <BookCheck aria-hidden="true" className="drawer-nav-icon" size={18} />
+        Minha lista
+      </Link>
+      <Link className="nav-link drawer-sidebar-link" href="/arquivados" onClick={onNavigate}>
+        <History aria-hidden="true" className="drawer-nav-icon" size={18} />
+        Histórico
+      </Link>
+      <Link className="nav-link drawer-sidebar-link" href="/perfil" onClick={onNavigate}>
+        <UserRound aria-hidden="true" className="drawer-nav-icon" size={18} />
+        Perfil
+      </Link>
+      <Link className="nav-link drawer-sidebar-link" href="/configuracoes" onClick={onNavigate}>
+        <Settings aria-hidden="true" className="drawer-nav-icon" size={18} />
+        Configurações
+      </Link>
+    </>
+  );
+}
+
 export function Header({ dashboard = false }: { dashboard?: boolean }) {
-  const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   return (
     <header
-      className={`site-header container ${dashboard ? "dashboard-header" : ""} ${isMobileSearchOpen ? "is-mobile-search-open" : ""}`}
+      className={`site-header container ${dashboard ? "dashboard-header" : "default-header"} ${isMobileSearchOpen ? "is-mobile-search-open" : ""}`}
     >
       <Link href="/" aria-label="Trackfy — início">
         <Image
@@ -57,15 +87,21 @@ export function Header({ dashboard = false }: { dashboard?: boolean }) {
         id="main-navigation"
         aria-label="Navegação principal"
       >
-        {pathname !== "/" && (
-          <Link className="nav-link" href="/">
-            <Home aria-hidden="true" className="drawer-nav-icon" size={18} />
-            Início
-          </Link>
-        )}
+        <button
+          aria-label="Fechar menu"
+          className="drawer-close-button"
+          onClick={() => setIsMobileMenuOpen(false)}
+          type="button"
+        >
+          <X aria-hidden="true" size={22} />
+        </button>
+        <Link className="nav-link drawer-home-link" href="/" onClick={() => setIsMobileMenuOpen(false)}>
+          <Home aria-hidden="true" className="drawer-nav-icon" size={18} />
+          Início
+        </Link>
+        <AuthenticatedDrawerLinks onNavigate={() => setIsMobileMenuOpen(false)} />
         <AuthNav drawer />
-        <MyListNav />
-        <Link className="nav-link nav-popular" href="/populares">
+        <Link className="nav-link nav-popular" href="/populares" onClick={() => setIsMobileMenuOpen(false)}>
           <Flame aria-hidden="true" className="drawer-nav-icon" size={18} />
           Populares
         </Link>

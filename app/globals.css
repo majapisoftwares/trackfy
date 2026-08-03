@@ -170,6 +170,18 @@ a {
   display: none;
 }
 
+.drawer-sidebar-link {
+  display: none;
+}
+
+.drawer-home-link {
+  display: none;
+}
+
+.drawer-close-button {
+  display: none;
+}
+
 .mobile-menu-button {
   display: none;
 }
@@ -775,7 +787,7 @@ a {
 
 .profile-history-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 18px;
 }
@@ -791,12 +803,6 @@ a {
   font-weight: 500;
   text-decoration: none;
   transition: color 160ms ease;
-}
-
-.profile-history-all-action {
-  display: flex;
-  justify-content: center;
-  margin-top: 28px;
 }
 
 .profile-history-all-button:hover {
@@ -3761,7 +3767,7 @@ a {
     gap: 8px;
     border-left: 1px solid rgba(255, 255, 255, 0.16);
     background: #18181b;
-    padding: 92px 24px 24px;
+    padding: 24px;
     box-shadow: -18px 0 40px rgba(0, 0, 0, 0.35);
     transform: translateX(105%);
     transition: transform 220ms ease;
@@ -3771,10 +3777,43 @@ a {
     transform: translateX(0);
   }
 
+  .drawer-close-button {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    align-self: flex-end;
+    place-items: center;
+    order: -2;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--foreground);
+    cursor: pointer;
+  }
+
+  .drawer-close-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .drawer-close-button:focus-visible {
+    outline: 2px solid var(--foreground);
+    outline-offset: 3px;
+  }
+
   .drawer-auth {
     display: grid;
-    order: 1;
+    order: 99;
     gap: 4px;
+  }
+
+  .header-nav .drawer-sidebar-link {
+    display: flex;
+    order: 1;
+  }
+
+  .header-nav .drawer-home-link {
+    display: flex;
+    order: -1;
   }
 
   .drawer-login-link {
@@ -3788,7 +3827,7 @@ a {
   }
 
   .header-nav .nav-popular {
-    order: 2;
+    order: 0;
   }
 
   .header-nav .nav-my-list {
@@ -3836,7 +3875,7 @@ a {
     transition: transform 180ms ease;
   }
 
-  .drawer-profile-button svg:last-child {
+  .drawer-profile-button svg:last-child:not(.drawer-nav-icon) {
     margin-left: auto;
   }
 
@@ -3997,7 +4036,9 @@ a {
   }
 
   .ratings-bar {
+    flex-wrap: wrap;
     justify-content: center;
+    row-gap: 8px;
   }
 
   .hero-description {
