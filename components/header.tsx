@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Flame, Home, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { AuthNav, MyListNav } from "./auth/auth-nav";
 import { SearchInput } from "./search-input";
@@ -51,15 +51,20 @@ export function Header() {
       >
         {pathname !== "/" && (
           <Link className="nav-link" href="/">
+            <Home aria-hidden="true" className="drawer-nav-icon" size={18} />
             Início
           </Link>
         )}
+        <AuthNav drawer />
         <MyListNav />
         <Link className="nav-link nav-popular" href="/populares">
+          <Flame aria-hidden="true" className="drawer-nav-icon" size={18} />
           Populares
         </Link>
-        <AuthNav />
       </nav>
+      <div className="header-desktop-auth">
+        <AuthNav />
+      </div>
     </header>
   );
 }

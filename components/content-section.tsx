@@ -43,7 +43,7 @@ export function ContentSection({
         )}
       </div>
       {items.length > 0 ? (
-        <MediaRow items={items} />
+        <MediaRow items={items} showQuickActions />
       ) : (
         <div className="section-empty">
           <p>

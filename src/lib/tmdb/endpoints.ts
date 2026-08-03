@@ -366,6 +366,7 @@ export async function getTrendingAllPage(
 ): Promise<PaginatedMedia> {
   const targetSize = 20;
   const results: MediaItem[] = [];
+  const resultKeys = new Set<string>();
   let sourcePage = page;
   let totalPages = page;
   let totalResults = 0;
@@ -391,11 +392,15 @@ export async function getTrendingAllPage(
         item.media_type === "movie" || item.media_type === "tv",
     );
     const allowed = await filterAllowedMedia(media.map(mapMediaResult));
-    results.push(
-      ...allowed.filter(
-        (item) => !filters.mediaType || item.mediaType === filters.mediaType,
-      ),
-    );
+    for (const item of allowed) {
+      if (filters.mediaType && item.mediaType !== filters.mediaType) continue;
+
+      const key = `${item.mediaType}-${item.id}`;
+      if (resultKeys.has(key)) continue;
+
+      resultKeys.add(key);
+      results.push(item);
+    }
     sourcePage += 1;
   }
 
@@ -574,22 +579,32 @@ export async function getPopularTVShowsPage(
   page = 1,
   filters: CatalogFilters = {},
 ): Promise<PaginatedMedia> {
-  const data = await tmdbFetch<TMDBListResponse<TMDBTVShow>>("/discover/tv", {
-    query: {
-      ...getCatalogQuery(page, filters, "first_air_date.desc"),
-      with_genres: getTVGenre(filters.genre),
-      first_air_date_year: filters.year,
-      without_keywords: [
-        ...EXCLUDED_TV_KEYWORDS,
-        ...BLOCKED_CONTENT_KEYWORDS,
-      ].join("|"),
-    },
-    revalidate: CACHE.popular,
-  });
-  const mapped = mapPage(data, mapTVShow);
+  const results: MediaItem[] = [];
+  let sourcePage = page;
+  let totalPages = page;
+  let totalResults = 0;
+
+  while (results.length < 20 && sourcePage <= totalPages && sourcePage < page + 3) {
+    const data = await tmdbFetch<TMDBListResponse<TMDBTVShow>>("/discover/tv", {
+      query: {
+        ...getCatalogQuery(sourcePage, filters, "first_air_date.desc"),
+        with_genres: getTVGenre(filters.genre),
+        first_air_date_year: filters.year,
+        without_keywords: [...EXCLUDED_TV_KEYWORDS, ...BLOCKED_CONTENT_KEYWORDS].join("|"),
+      },
+      revalidate: CACHE.popular,
+    });
+    totalPages = data.total_pages;
+    totalResults = data.total_results;
+    results.push(...data.results.map(mapTVShow).filter(isEditorialMedia));
+    sourcePage += 1;
+  }
+
   return {
-    ...mapped,
-    results: mapped.results.filter(isEditorialMedia),
+    page,
+    results: results.slice(0, 20),
+    totalPages: Math.min(totalPages, 500),
+    totalResults,
   };
 }
 

@@ -14,6 +14,7 @@ import { SeasonCarousel } from "./season-carousel";
 import { TrailerButton } from "./trailer-button";
 import { WatchProviderCard } from "./watch-provider-card";
 import { Rating } from "./rating";
+import { CommunityRating } from "./community-rating";
 
 function EpisodeCard({
   episode,
@@ -304,6 +305,12 @@ export function ContentDetail({
               <i />
               <span><b className="imdb">IMDb</b> {content.imdbRating.toFixed(1)}</span>
               <i />
+              <CommunityRating
+                mediaType={content.mediaType}
+                mediaId={content.id}
+                imdbRating={content.imdbRating}
+              />
+              <i />
               <span>{content.year}</span>
               <i />
               <span>{content.status}</span>
@@ -347,9 +354,11 @@ export function ContentDetail({
                   <button className={`detail-button primary ${watched ? "active" : ""}`} onClick={toggleSeriesWatched} type="button">
                     <CheckCheck size={20} /> {watched ? "Assistido" : "Marcar como assistido"}
                   </button>
-                  <button className={`detail-button ${inList ? "in-list" : ""}`} onClick={() => update({ inList: !inList })} type="button">
-                    {inList ? <X size={20} /> : <Plus size={20} />} {inList ? "Remover da minha lista" : "Minha lista"}
-                  </button>
+                  {!watched && (
+                    <button className={`detail-button ${inList ? "in-list" : ""}`} onClick={() => update({ inList: !inList })} type="button">
+                      {inList ? <X size={20} /> : <Plus size={20} />} {inList ? "Remover da minha lista" : "Minha lista"}
+                    </button>
+                  )}
                 </>
               ) : (
                 <Link className="detail-button primary" href="/login">

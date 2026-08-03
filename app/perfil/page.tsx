@@ -65,8 +65,10 @@ export default async function ProfilePage() {
   const completedMovies = entries.filter(
     (entry) => entry.mediaType === "movie" && entry.watched,
   );
-  const completedShows = entries.filter(
-    (entry) => entry.mediaType === "tv" && entry.watched,
+  const watchedEpisodes = entries.reduce(
+    (total, entry) =>
+      total + (entry.mediaType === "tv" ? entry.watchedEpisodes.length : 0),
+    0,
   );
   const watchingNow = entries.filter(
     (entry) => entry.mediaType === "tv" && !entry.watched && entry.watchedEpisodes.length > 0,
@@ -116,8 +118,8 @@ export default async function ProfilePage() {
               <strong>{completedMovies.length}</strong>
             </article>
             <article className="profile-stat profile-count">
-              <span>Séries assistidas</span>
-              <strong>{completedShows.length}</strong>
+              <span>Episódios assistidos</span>
+              <strong>{watchedEpisodes}</strong>
             </article>
           </div>
 

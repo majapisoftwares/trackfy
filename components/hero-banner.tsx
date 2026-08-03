@@ -9,6 +9,7 @@ import { useTracking } from "@/src/lib/tracking/client";
 import { useAuthSession } from "@/src/lib/auth/client";
 import type { MediaItem } from "@/src/lib/tmdb/types";
 import { Rating } from "./rating";
+import { CommunityRating } from "./community-rating";
 
 export function HeroBanner({ item }: { item: MediaItem }) {
   const router = useRouter();
@@ -22,6 +23,7 @@ export function HeroBanner({ item }: { item: MediaItem }) {
     posterUrl,
   });
   const inList = entry?.inList ?? false;
+  const watched = entry?.watched ?? false;
   const session = useAuthSession();
 
   return (
@@ -42,6 +44,14 @@ export function HeroBanner({ item }: { item: MediaItem }) {
         <div className="ratings-bar" aria-label="Informações da produção">
           <Rating value={item.voteAverage} className="rating-piece" />
           <span className="rating-divider" aria-hidden="true" />
+          <span><b className="imdb">IMDb</b> {item.voteAverage.toFixed(1)}</span>
+          <span className="rating-divider" aria-hidden="true" />
+          <CommunityRating
+            mediaType={item.mediaType}
+            mediaId={item.id}
+            imdbRating={item.voteAverage}
+          />
+          <span className="rating-divider" aria-hidden="true" />
           <span>{item.year ?? "Ano indisponível"}</span>
           <span className="rating-divider" aria-hidden="true" />
           <span>{typeLabel}</span>
@@ -50,7 +60,7 @@ export function HeroBanner({ item }: { item: MediaItem }) {
           {item.overview || "Sinopse indisponível para este título."}
         </p>
         <div className="hero-actions">
-          {session.data?.user && <button
+          {session.data?.user && !watched && <button
             aria-pressed={inList}
             className={`hero-button primary ${inList ? "active" : ""}`}
             onClick={() =>

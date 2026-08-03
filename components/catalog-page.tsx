@@ -14,6 +14,7 @@ type CatalogPageProps = {
   filters?: Record<string, string | undefined>;
   showFilters?: boolean;
   showMediaTypeFilter?: boolean;
+  showQuickActions?: boolean;
 };
 
 export function CatalogPage({
@@ -25,6 +26,7 @@ export function CatalogPage({
   filters = {},
   showFilters = true,
   showMediaTypeFilter = false,
+  showQuickActions = false,
 }: CatalogPageProps) {
   return (
     <>
@@ -44,7 +46,11 @@ export function CatalogPage({
           {items.length > 0 ? (
             <div className="catalog-grid">
               {items.map((item) => (
-                <MediaCard item={item} key={`${item.mediaType}-${item.id}`} />
+                <MediaCard
+                  item={item}
+                  key={`${item.mediaType}-${item.id}`}
+                  showQuickActions={showQuickActions}
+                />
               ))}
             </div>
           ) : (

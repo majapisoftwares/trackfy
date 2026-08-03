@@ -2,36 +2,35 @@ import Image from "next/image";
 import Link from "next/link";
 import { Check, ChevronRight } from "lucide-react";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
+import type { ContinueWatchingItem } from "@/src/lib/tracking/continue-watching";
 import { Rating } from "./rating";
 
-export type ContinueWatchingItem = {
-  seriesId: number;
-  seriesTitle: string;
-  episodeTitle: string;
-  seasonNumber: number;
-  episodeNumber: number;
-  stillPath: string | null;
-  posterUrl: string | null;
-  voteAverage: number;
-  airDate?: string | null;
-};
+export type { ContinueWatchingItem } from "@/src/lib/tracking/continue-watching";
 
 export function ContinueWatchingSection({
   items,
+  title = "Continuar assistindo",
+  subtitle = "Retome de onde você parou",
+  href = "/episodios-para-assistir",
+  showAll = true,
 }: {
   items: ContinueWatchingItem[];
+  title?: string;
+  subtitle?: string;
+  href?: string;
+  showAll?: boolean;
 }) {
   return (
     <section className="content-section container" id="continuar-assistindo">
       <div className="section-head">
         <div>
-          <h2 className="section-title">Continuar assistindo</h2>
-          <p className="section-subtitle">Retome de onde você parou</p>
+          <h2 className="section-title">{title}</h2>
+          <p className="section-subtitle">{subtitle}</p>
         </div>
-        {items.length > 0 && (
-          <a className="section-link" href="#continuar-assistindo">
+        {showAll && items.length > 0 && (
+          <Link className="section-link" href={href}>
             Ver todos <ChevronRight aria-hidden="true" size={20} />
-          </a>
+          </Link>
         )}
       </div>
       {items.length > 0 ? (

@@ -29,7 +29,8 @@ export default async function PopularPage({
       currentPage={data.page}
       totalPages={data.totalPages}
       filters={values}
-      showMediaTypeFilter
+      showFilters={false}
+      showQuickActions
     />
   );
 }

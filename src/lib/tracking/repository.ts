@@ -87,6 +87,21 @@ export async function findTrackingEntry(
   return document ? toTrackingEntry(document) : null;
 }
 
+export async function getCommunityRating(
+  mediaType: TrackingMediaType,
+  mediaId: number,
+): Promise<{ average: number | null; count: number }> {
+  const collection = await getTrackingCollection();
+  const [result] = await collection
+    .aggregate<{ average: number; count: number }>([
+      { $match: { mediaType, mediaId, rating: { $ne: null } } },
+      { $group: { _id: null, average: { $avg: "$rating" }, count: { $sum: 1 } } },
+    ])
+    .toArray();
+
+  return result ? { average: result.average, count: result.count } : { average: null, count: 0 };
+}
+
 export async function listTrackingEntries(
   ownerId: string,
   options: {
