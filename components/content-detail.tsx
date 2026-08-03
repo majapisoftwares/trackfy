@@ -282,7 +282,7 @@ export function ContentDetail({
           <div className="detail-copy">
             <div className="detail-title-row">
               <h1>{content.title}</h1>
-              {content.mediaType === "tv" && (
+              {content.mediaType === "tv" && isAuthenticated && (
                 <div
                   className={`series-progress ${isSeriesCompleting ? "is-completing" : ""}`}
                   role="progressbar"
