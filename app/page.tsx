@@ -9,6 +9,7 @@ import {
 import { Footer } from "@/components/footer";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { HeroBanner } from "@/components/hero-banner";
+import { GenreSection } from "@/components/genre-section";
 import { StreamingSection } from "@/components/streaming-section";
 import { AUTH_COOKIE_NAME } from "@/src/lib/auth/session";
 import { findAuthUserBySessionToken } from "@/src/lib/auth/repository";
@@ -284,6 +285,7 @@ export default async function Home() {
                   href="/populares"
                 />
                 <StreamingSection />
+                <GenreSection />
               </>
             ) : (
               <>
@@ -319,6 +321,7 @@ export default async function Home() {
                 href="/populares"
               />
               <StreamingSection />
+              <GenreSection />
               </>
             )
           ) : (
@@ -333,6 +336,7 @@ export default async function Home() {
               <ContentSection title="Filmes populares" subtitle="Os filmes mais populares do momento" items={data.popularMovies} href="/filmes/populares" />
               <ContentSection title="Seriados populares" subtitle="As séries mais populares do momento" items={data.popularTVShows} href="/series/populares" />
               <StreamingSection />
+              <GenreSection />
             </>
           )}
         </div>

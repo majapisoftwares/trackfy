@@ -23,23 +23,64 @@ async function getMedia(entry: TrackingEntry): Promise<MediaItem | null> {
   }
 }
 
-async function getWatchedMinutes(entry: TrackingEntry): Promise<number> {
+type WatchStats = {
+  minutes: number;
+  episodes: number;
+};
+
+async function getWatchStats(entry: TrackingEntry): Promise<WatchStats> {
   try {
     if (entry.mediaType === "movie") {
-      if (!entry.watched) return 0;
-      return (await getMovieDetails(entry.mediaId)).runtime ?? 0;
+      return {
+        minutes: entry.watched
+          ? (await getMovieDetails(entry.mediaId)).runtime ?? 0
+          : 0,
+        episodes: 0,
+      };
     }
 
-    if (entry.watchedEpisodes.length === 0) return 0;
+    if (!entry.watched && entry.watchedEpisodes.length === 0) {
+      return { minutes: 0, episodes: 0 };
+    }
+
     const details = await getTVShowDetails(entry.mediaId);
     const episodeRuntime = details.episode_run_time?.find((value) => value > 0) ?? 45;
-    return episodeRuntime * entry.watchedEpisodes.length;
+    // A series marked as watched may not have each episode persisted separately
+    // (for example, when it is completed from a media card).
+    const episodes = entry.watched
+      ? details.number_of_episodes
+      : entry.watchedEpisodes.length;
+
+    return {
+      minutes: episodeRuntime * episodes,
+      episodes,
+    };
   } catch {
-    return 0;
+    return {
+      minutes: 0,
+      // Preserve individually tracked episodes if loading show details fails.
+      episodes: entry.mediaType === "tv" ? entry.watchedEpisodes.length : 0,
+    };
   }
 }
 
 function formatWatchTime(totalMinutes: number): string {
+  const totalDays = Math.floor(totalMinutes / (60 * 24));
+  const totalMonths = Math.floor(totalDays / 30);
+
+  if (totalMonths >= 12) {
+    const years = Math.floor(totalMonths / 12);
+    return `${years} ${years === 1 ? "ano" : "anos"}`;
+  }
+
+  if (totalMonths > 0) {
+    return `${totalMonths} ${totalMonths === 1 ? "mês" : "meses"}`;
+  }
+
+  if (totalDays > 0) {
+    return `${totalDays} ${totalDays === 1 ? "dia" : "dias"}`;
+  }
+
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return hours > 0 ? `${hours}h${minutes ? ` ${minutes}min` : ""}` : `${minutes}min`;
@@ -65,11 +106,6 @@ export default async function ProfilePage() {
   const completedMovies = entries.filter(
     (entry) => entry.mediaType === "movie" && entry.watched,
   );
-  const watchedEpisodes = entries.reduce(
-    (total, entry) =>
-      total + (entry.mediaType === "tv" ? entry.watchedEpisodes.length : 0),
-    0,
-  );
   const watchingNow = entries.filter(
     (entry) => entry.mediaType === "tv" && !entry.watched && entry.watchedEpisodes.length > 0,
   );
@@ -77,14 +113,20 @@ export default async function ProfilePage() {
     .filter((entry) => entry.watched || entry.watchedEpisodes.length > 0)
     .slice(0, 5);
 
-  const [watchedMinutes, historyItems] = await Promise.all([
-    Promise.all(entries.map(getWatchedMinutes)).then((items) =>
-      items.reduce((total, minutes) => total + minutes, 0),
-    ),
+  const [watchStats, historyItems] = await Promise.all([
+    Promise.all(entries.map(getWatchStats)),
     Promise.all(history.map(getMedia)).then((items) =>
       items.filter((item): item is MediaItem => item !== null),
     ),
   ]);
+  const watchedMinutes = watchStats.reduce(
+    (total, stats) => total + stats.minutes,
+    0,
+  );
+  const watchedEpisodes = watchStats.reduce(
+    (total, stats) => total + stats.episodes,
+    0,
+  );
   const displayName = user.nickname || user.email;
   const initials = displayName.slice(0, 2).toUpperCase();
 
