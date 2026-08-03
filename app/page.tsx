@@ -244,7 +244,12 @@ async function getPersonalizedHome(ownerId: string) {
     ),
     continueWatching: continueWatching
       .filter((item): item is ContinueWatchingItem => item !== null)
-      .filter((item) => !isFutureEpisode(item.airDate ?? null)),
+      .filter(
+        (item) =>
+          item.airDate !== null &&
+          item.airDate !== undefined &&
+          !isFutureEpisode(item.airDate),
+      ),
     upcomingEpisodes: upcomingEpisodes
       .filter((item): item is UpcomingEpisodeItem => item !== null)
       .sort((left, right) => left.airDate.localeCompare(right.airDate)),

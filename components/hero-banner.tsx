@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
 import { useTracking } from "@/src/lib/tracking/client";
+import { useAuthSession } from "@/src/lib/auth/client";
 import type { MediaItem } from "@/src/lib/tmdb/types";
 import { Rating } from "./rating";
 
@@ -21,6 +22,7 @@ export function HeroBanner({ item }: { item: MediaItem }) {
     posterUrl,
   });
   const inList = entry?.inList ?? false;
+  const session = useAuthSession();
 
   return (
     <>
@@ -48,7 +50,7 @@ export function HeroBanner({ item }: { item: MediaItem }) {
           {item.overview || "Sinopse indisponível para este título."}
         </p>
         <div className="hero-actions">
-          <button
+          {session.data?.user && <button
             aria-pressed={inList}
             className={`hero-button primary ${inList ? "active" : ""}`}
             onClick={() =>
@@ -61,7 +63,7 @@ export function HeroBanner({ item }: { item: MediaItem }) {
           >
             {inList ? <Check aria-hidden="true" size={20} /> : <Plus aria-hidden="true" size={20} />}
             {inList ? "Na minha lista" : "Adicionar à minha lista"}
-          </button>
+          </button>}
           <Link className="hero-button secondary" href={href}>
             <Info aria-hidden="true" size={20} />
             Mais informações

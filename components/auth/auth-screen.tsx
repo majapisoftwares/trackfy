@@ -1,11 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
+import { getPopularMovies } from "@/src/lib/tmdb/endpoints";
 import { AuthForm } from "./auth-form";
 
 type AuthMode = "login" | "register";
 
-function AuthVisual({ mode }: { mode: AuthMode }) {
+function AuthVisual({
+  mode,
+  backgroundUrl,
+}: {
+  mode: AuthMode;
+  backgroundUrl: string | null;
+}) {
   const isLogin = mode === "login";
 
   return (
@@ -13,19 +21,17 @@ function AuthVisual({ mode }: { mode: AuthMode }) {
       className={`auth-visual ${isLogin ? "auth-visual-login" : "auth-visual-register"}`}
       aria-label="Destaque do catálogo"
     >
-      <Image
-        className="auth-visual-background"
-        src={
-          isLogin
-            ? "https://image.tmdb.org/t/p/original/uTWhbLc7Bj4qNSdW3ZvZKL8cOHv.jpg"
-            : "https://image.tmdb.org/t/p/original/oKJDm4QCKbp6mR4FnxXrFlPJP8Y.jpg"
-        }
-        alt=""
-        fill
-        priority
-        quality={100}
-        sizes="(max-width: 820px) 0px, 50vw"
-      />
+      {backgroundUrl && (
+        <Image
+          className="auth-visual-background"
+          src={backgroundUrl}
+          alt=""
+          fill
+          priority
+          quality={95}
+          sizes="(max-width: 820px) 0px, 50vw"
+        />
+      )}
       <div className="auth-visual-overlay" />
       <div className="auth-visual-content">
         <Link
@@ -52,21 +58,25 @@ function AuthVisual({ mode }: { mode: AuthMode }) {
   );
 }
 
-export function AuthScreen({ mode }: { mode: AuthMode }) {
+export async function AuthScreen({ mode }: { mode: AuthMode }) {
   const isLogin = mode === "login";
+  const popular = await getPopularMovies().catch(() => []);
+  const backgroundUrl = getTMDBImageUrl(
+    popular.find((item, index) => index === (isLogin ? 0 : 1) && item.backdropPath)
+      ?.backdropPath ?? popular.find((item) => item.backdropPath)?.backdropPath,
+    "w1280",
+  );
 
   const formPanel = (
     <section className="auth-panel">
-      {isLogin && (
-        <Link
-          className="auth-back-link"
-          href="/"
-          aria-label="Voltar para o início"
-          title="Voltar para o início"
-        >
-          <ArrowLeft aria-hidden="true" size={18} />
-        </Link>
-      )}
+      <Link
+        className="auth-back-link"
+        href="/"
+        aria-label="Voltar para o início"
+        title="Voltar para o início"
+      >
+        <ArrowLeft aria-hidden="true" size={18} />
+      </Link>
       <div className="auth-panel-inner">
         <header className="auth-heading">
           <h1>{isLogin ? "Acesse sua conta" : "Crie sua conta"}</h1>
@@ -86,11 +96,11 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
       {isLogin ? (
         <>
           {formPanel}
-          <AuthVisual mode={mode} />
+          <AuthVisual mode={mode} backgroundUrl={backgroundUrl} />
         </>
       ) : (
         <>
-          <AuthVisual mode={mode} />
+          <AuthVisual mode={mode} backgroundUrl={backgroundUrl} />
           {formPanel}
         </>
       )}

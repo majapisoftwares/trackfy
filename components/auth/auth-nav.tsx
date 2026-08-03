@@ -1,37 +1,17 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Archive, LogOut, Settings, UserRound } from "lucide-react";
 import { useState } from "react";
-
-type SessionPayload = {
-  user: { id: string; email: string; nickname: string | null } | null;
-};
-
-async function fetchSession(): Promise<SessionPayload> {
-  const response = await fetch("/api/auth/session", {
-    credentials: "same-origin",
-  });
-
-  if (!response.ok) {
-    return { user: null };
-  }
-
-  return response.json() as Promise<SessionPayload>;
-}
+import { type SessionPayload, useAuthSession } from "@/src/lib/auth/client";
 
 export function AuthNav() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const session = useQuery({
-    queryKey: ["auth-session"],
-    queryFn: fetchSession,
-    retry: false,
-    staleTime: 60_000,
-  });
+  const session = useAuthSession();
   const logout = useMutation({
     mutationFn: async () => {
       const response = await fetch("/api/auth/logout", { method: "POST" });
@@ -104,12 +84,7 @@ export function AuthNav() {
 }
 
 export function MyListNav() {
-  const session = useQuery({
-    queryKey: ["auth-session"],
-    queryFn: fetchSession,
-    retry: false,
-    staleTime: 60_000,
-  });
+  const session = useAuthSession();
 
   if (session.isPending || !session.data?.user) return null;
 

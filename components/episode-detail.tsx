@@ -1,11 +1,12 @@
 "use client";
 
-import { AlarmClockCheck, Check, CheckCheck, Star } from "lucide-react";
+import { AlarmClockCheck, Check, CheckCheck, LogIn, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { useTracking } from "@/src/lib/tracking/client";
+import { useAuthSession } from "@/src/lib/auth/client";
 import { episodeKey } from "@/src/lib/tracking/types";
 import type { EpisodePageData } from "@/src/lib/tmdb/episode";
 import { SeasonCarousel } from "./season-carousel";
@@ -32,6 +33,8 @@ export function EpisodeDetail({
 }) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
+  const session = useAuthSession();
+  const isAuthenticated = Boolean(session.data?.user);
   const { entry, error, updateEpisodes } = useTracking(
     "tv",
     episode.showId,
@@ -130,34 +133,42 @@ export function EpisodeDetail({
               )}
             </div>
             <div className="episode-actions">
-              <button
-                className={`detail-button primary ${watched ? "active" : ""}`}
-                onClick={() =>
-                  updateEpisodes({
-                    episodes: [currentEpisode],
-                    watched: !watched,
-                    target: "watched",
-                  })
-                }
-                type="button"
-              >
-                {watched ? <Check size={20} /> : <CheckCheck size={20} />}
-                {watched ? "Assistido" : "Marcar como assistido"}
-              </button>
-              <button
-                className={`detail-button ${watchLater ? "active" : ""}`}
-                onClick={() =>
-                  updateEpisodes({
-                    episodes: [currentEpisode],
-                    watched: !watchLater,
-                    target: "watchLater",
-                  })
-                }
-                type="button"
-              >
-                <AlarmClockCheck size={20} />
-                {watchLater ? "Salvo para depois" : "Assistir mais tarde"}
-              </button>
+              {isAuthenticated ? (
+                <>
+                  <button
+                    className={`detail-button primary ${watched ? "active" : ""}`}
+                    onClick={() =>
+                      updateEpisodes({
+                        episodes: [currentEpisode],
+                        watched: !watched,
+                        target: "watched",
+                      })
+                    }
+                    type="button"
+                  >
+                    {watched ? <Check size={20} /> : <CheckCheck size={20} />}
+                    {watched ? "Assistido" : "Marcar como assistido"}
+                  </button>
+                  <button
+                    className={`detail-button ${watchLater ? "active" : ""}`}
+                    onClick={() =>
+                      updateEpisodes({
+                        episodes: [currentEpisode],
+                        watched: !watchLater,
+                        target: "watchLater",
+                      })
+                    }
+                    type="button"
+                  >
+                    <AlarmClockCheck size={20} />
+                    {watchLater ? "Salvo para depois" : "Assistir mais tarde"}
+                  </button>
+                </>
+              ) : (
+                <Link className="detail-button primary" href="/login">
+                  <LogIn size={20} /> Entrar para acompanhar
+                </Link>
+              )}
               <span className="action-divider" />
               <TrailerButton
                 contentTitle={episode.title}
@@ -247,7 +258,7 @@ export function EpisodeDetail({
                     sizes="(max-width: 700px) 90vw, (max-width: 1000px) 45vw, 415px"
                   />
                   <div className="episode-shade" />
-                  {item.voteAverage > 0 && (
+                  {item.voteAverage > 0 && (isAuthenticated ? (
                     <button
                       className={`episode-state-button ${
                         isWatched ? "watched-badge" : "unwatched-badge"
@@ -273,7 +284,16 @@ export function EpisodeDetail({
                           : "Marcar como assistido"}
                       </span>
                     </button>
-                  )}
+                  ) : (
+                    <Link
+                      className="episode-state-button unwatched-badge"
+                      href="/login"
+                      aria-label="Entrar para acompanhar"
+                    >
+                      <LogIn size={15} strokeWidth={3} />
+                      <span className="episode-state-label">Entrar para acompanhar</span>
+                    </Link>
+                  ))}
                   <Link className="episode-card-link" href={href}>
                     <div>
                       <h3 title={item.title}>{item.title}</h3>

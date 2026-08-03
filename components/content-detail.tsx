@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Archive, Check, CheckCheck, ChevronDown, ChevronLeft, ChevronRight, Plus, Star, X } from "lucide-react";
+import { Archive, Check, CheckCheck, ChevronDown, ChevronLeft, ChevronRight, LogIn, Plus, Star, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTracking } from "@/src/lib/tracking/client";
+import { useAuthSession } from "@/src/lib/auth/client";
 import { episodeKey } from "@/src/lib/tracking/types";
 import type { ContentDetails, Episode } from "@/types/media";
 import type { MediaItem } from "@/src/lib/tmdb/types";
@@ -19,11 +20,13 @@ function EpisodeCard({
   isWatched,
   onWatchedChange,
   href,
+  isAuthenticated,
 }: {
   episode: Episode;
   isWatched: boolean;
   onWatchedChange: (watched: boolean) => void;
   href: string;
+  isAuthenticated: boolean;
 }) {
   return (
     <article className={`episode-card ${isWatched ? "is-watched" : "is-unwatched"}`}>
@@ -35,7 +38,7 @@ function EpisodeCard({
         sizes="(max-width: 700px) 90vw, (max-width: 1000px) 45vw, 415px"
       />
       <div className="episode-shade" />
-      {episode.rating && (
+      {episode.rating && (isAuthenticated ? (
         <button
           className={`episode-state-button ${isWatched ? "watched-badge" : "unwatched-badge"}`}
           type="button"
@@ -48,7 +51,16 @@ function EpisodeCard({
             {isWatched ? "Marcar como não assistido" : "Marcar como assistido"}
           </span>
         </button>
-      )}
+      ) : (
+        <Link
+          className="episode-state-button unwatched-badge"
+          href="/login"
+          aria-label="Entrar para acompanhar"
+        >
+          <LogIn size={15} strokeWidth={3} />
+          <span className="episode-state-label">Entrar para acompanhar</span>
+        </Link>
+      ))}
       <Link className="episode-footer episode-detail-link" href={href}>
         <div>
           <h3 title={episode.title}>{episode.title}</h3>
@@ -77,6 +89,8 @@ export function ContentDetail({
   const [isSeriesCompleting, setIsSeriesCompleting] = useState(false);
   const [season, setSeason] = useState(content.seasons[0]?.number ?? 1);
   const [hoveredRating, setHoveredRating] = useState(0);
+  const session = useAuthSession();
+  const isAuthenticated = Boolean(session.data?.user);
   const { entry, error, update, updateAsync, updateEpisodes } = useTracking(
     content.mediaType,
     content.id,
@@ -328,12 +342,20 @@ export function ContentDetail({
             </div>
             <p className="detail-tagline">{content.tagline}</p>
             <div className="detail-actions">
-              <button className={`detail-button primary ${watched ? "active" : ""}`} onClick={toggleSeriesWatched} type="button">
-                <CheckCheck size={20} /> {watched ? "Assistido" : "Marcar como assistido"}
-              </button>
-              <button className={`detail-button ${inList ? "in-list" : ""}`} onClick={() => update({ inList: !inList })} type="button">
-                {inList ? <X size={20} /> : <Plus size={20} />} {inList ? "Remover da minha lista" : "Minha lista"}
-              </button>
+              {isAuthenticated ? (
+                <>
+                  <button className={`detail-button primary ${watched ? "active" : ""}`} onClick={toggleSeriesWatched} type="button">
+                    <CheckCheck size={20} /> {watched ? "Assistido" : "Marcar como assistido"}
+                  </button>
+                  <button className={`detail-button ${inList ? "in-list" : ""}`} onClick={() => update({ inList: !inList })} type="button">
+                    {inList ? <X size={20} /> : <Plus size={20} />} {inList ? "Remover da minha lista" : "Minha lista"}
+                  </button>
+                </>
+              ) : (
+                <Link className="detail-button primary" href="/login">
+                  <LogIn size={20} /> Entrar para acompanhar
+                </Link>
+              )}
               {canArchive && (
                 <button className={`detail-button ${archived ? "archived" : ""}`} onClick={() => update({ archived: !archived })} type="button">
                   <Archive size={20} /> {archived ? "Desarquivar" : "Arquivar"}
@@ -416,23 +438,25 @@ export function ContentDetail({
           <section className="episodes-section">
           <div className="episodes-head">
             <h2>Episódios</h2>
-            <button
-              className={`mark-season ${allSeasonWatched ? "active" : ""}`}
-              type="button"
-              onClick={toggleSeasonWatched}
-              aria-pressed={allSeasonWatched}
-              aria-label={allSeasonWatched ? "Desmarcar todos os episódios" : "Marcar temporada como concluída"}
-            >
-              {allSeasonWatched ? (
-                <>
-                  <span className="mark-season-default">Temporada concluída</span>
-                  <span className="mark-season-hover">Desmarcar</span>
-                </>
-              ) : (
-                <span>Temporada concluída</span>
-              )}
-              <CheckCheck size={20} />
-            </button>
+            {isAuthenticated && (
+              <button
+                className={`mark-season ${allSeasonWatched ? "active" : ""}`}
+                type="button"
+                onClick={toggleSeasonWatched}
+                aria-pressed={allSeasonWatched}
+                aria-label={allSeasonWatched ? "Desmarcar todos os episódios" : "Marcar temporada como concluída"}
+              >
+                {allSeasonWatched ? (
+                  <>
+                    <span className="mark-season-default">Temporada concluída</span>
+                    <span className="mark-season-hover">Desmarcar</span>
+                  </>
+                ) : (
+                  <span>Temporada concluída</span>
+                )}
+                <CheckCheck size={20} />
+              </button>
+            )}
             <SeasonCarousel
               seasons={content.seasons}
               activeSeason={season}
@@ -446,6 +470,7 @@ export function ContentDetail({
                 href={`/series/${content.id}/season/${season}/episode/${episode.number}`}
                 isWatched={Boolean(watchedEpisodes[episode.id])}
                 key={episode.id}
+                isAuthenticated={isAuthenticated}
                 onWatchedChange={(nextWatched) =>
                   void toggleEpisodeWatched(
                     season,
