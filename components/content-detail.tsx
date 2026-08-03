@@ -77,7 +77,7 @@ export function ContentDetail({
   const [isSeriesCompleting, setIsSeriesCompleting] = useState(false);
   const [season, setSeason] = useState(content.seasons[0]?.number ?? 1);
   const [hoveredRating, setHoveredRating] = useState(0);
-  const { entry, error, update, updateEpisodes } = useTracking(
+  const { entry, error, update, updateAsync, updateEpisodes } = useTracking(
     content.mediaType,
     content.id,
     {
@@ -107,7 +107,7 @@ export function ContentDetail({
         content.seasons.flatMap((item) =>
           item.episodes.map((episode) => [
             episode.id,
-            watchedEpisodeKeys.has(
+            (content.mediaType === "tv" && watched) || watchedEpisodeKeys.has(
               episodeKey({
                 seasonNumber: item.number,
                 episodeNumber: episode.number,
@@ -116,7 +116,7 @@ export function ContentDetail({
           ]),
         ),
     ),
-    [content.seasons, watchedEpisodeKeys],
+    [content.mediaType, content.seasons, watched, watchedEpisodeKeys],
   );
   const selectedEpisodes = useMemo(
     () => content.seasons.find((item) => item.number === season)?.episodes ?? [],
@@ -146,7 +146,9 @@ export function ContentDetail({
     (episode) => watchedEpisodes[episode.id],
   ).length;
   const seriesProgress =
-    releasedSeriesEpisodes.length > 0
+    watched
+      ? 100
+      : releasedSeriesEpisodes.length > 0
       ? Math.round(
           (watchedSeriesEpisodes / releasedSeriesEpisodes.length) * 100,
         )
@@ -198,6 +200,39 @@ export function ContentDetail({
         target: "watched",
       });
     }
+  }
+
+  async function toggleEpisodeWatched(
+    seasonNumber: number,
+    episodeNumber: number,
+    nextWatched: boolean,
+  ) {
+    if (content.mediaType === "tv" && watched && !nextWatched) {
+      try {
+        await updateAsync({ watched: false });
+      } catch {
+        return;
+      }
+      const remainingEpisodes = allReleasedEpisodeKeys.filter(
+        (episode) =>
+          episode.seasonNumber !== seasonNumber ||
+          episode.episodeNumber !== episodeNumber,
+      );
+      if (remainingEpisodes.length > 0) {
+        updateEpisodes({
+          episodes: remainingEpisodes,
+          watched: true,
+          target: "watched",
+        });
+      }
+      return;
+    }
+
+    updateEpisodes({
+      episodes: [{ seasonNumber, episodeNumber }],
+      watched: nextWatched,
+      target: "watched",
+    });
   }
 
   function updateCastScroll() {
@@ -275,7 +310,10 @@ export function ContentDetail({
                           type="button"
                           aria-label={`Avaliar com ${value} ${value === 1 ? "estrela" : "estrelas"}`}
                           aria-pressed={rating === value}
-                          onClick={() => update({ rating: value, inList: true })}
+                          onClick={() => update({
+                            rating: value,
+                            inList: !watched,
+                          })}
                           onFocus={() => setHoveredRating(value)}
                           onBlur={() => setHoveredRating(0)}
                           onMouseEnter={() => setHoveredRating(value)}
@@ -408,17 +446,12 @@ export function ContentDetail({
                 href={`/series/${content.id}/season/${season}/episode/${episode.number}`}
                 isWatched={Boolean(watchedEpisodes[episode.id])}
                 key={episode.id}
-                onWatchedChange={(value) =>
-                  updateEpisodes({
-                    episodes: [
-                      {
-                        seasonNumber: season,
-                        episodeNumber: episode.number,
-                      },
-                    ],
-                    watched: value,
-                    target: "watched",
-                  })
+                onWatchedChange={(nextWatched) =>
+                  void toggleEpisodeWatched(
+                    season,
+                    episode.number,
+                    nextWatched,
+                  )
                 }
               />
             ))}

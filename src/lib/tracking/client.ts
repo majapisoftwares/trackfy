@@ -160,6 +160,7 @@ export function useTracking(
     isLoading: query.isLoading,
     error: query.error ?? updateMutation.error ?? episodeMutation.error,
     update: updateMutation.mutate,
+    updateAsync: updateMutation.mutateAsync,
     updateEpisodes: episodeMutation.mutate,
   };
 }

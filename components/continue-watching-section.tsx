@@ -13,6 +13,7 @@ export type ContinueWatchingItem = {
   stillPath: string | null;
   posterUrl: string | null;
   voteAverage: number;
+  airDate?: string | null;
 };
 
 export function ContinueWatchingSection({

@@ -1,5 +1,6 @@
-import { CalendarDays, Clock3 } from "lucide-react";
+import { CalendarDays, ChevronRight, Clock3 } from "lucide-react";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
@@ -82,7 +83,8 @@ export default async function ProfilePage() {
       items.filter((item): item is MediaItem => item !== null),
     ),
   ]);
-  const initials = user.email.slice(0, 2).toUpperCase();
+  const displayName = user.nickname || user.email;
+  const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
     <>
@@ -91,8 +93,8 @@ export default async function ProfilePage() {
         <section className="profile-content container" aria-labelledby="profile-title">
           <div className="profile-identity">
             <div className="profile-avatar" aria-hidden="true">{initials}</div>
-            <div>
-              <h1 id="profile-title">{user.email}</h1>
+            <div className="profile-user-details">
+              <h1 id="profile-title">{displayName}</h1>
               <p><CalendarDays aria-hidden="true" size={14} /> Membro desde {formatJoinDate(user.createdAt)}</p>
             </div>
           </div>
@@ -131,6 +133,12 @@ export default async function ProfilePage() {
             ) : (
               <p className="profile-history-empty">Seu histórico aparecerá aqui quando você marcar conteúdos como assistidos.</p>
             )}
+            <div className="profile-history-all-action">
+              <Link className="profile-history-all-button" href="/arquivados">
+                Ver todo histórico
+                <ChevronRight aria-hidden="true" size={22} strokeWidth={2.25} />
+              </Link>
+            </div>
           </section>
         </section>
       </main>

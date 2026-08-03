@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUser(request);
     return jsonNoStore({
-      user: user ? { id: user.id, email: user.email } : null,
+      user: user ? { id: user.id, email: user.email, nickname: user.nickname } : null,
     });
   } catch (error) {
     logger.error(error, "AUTH_SESSION_ERROR");

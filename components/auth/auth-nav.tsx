@@ -3,11 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, LogOut, UserRound } from "lucide-react";
+import { Archive, LogOut, Settings, UserRound } from "lucide-react";
 import { useState } from "react";
 
 type SessionPayload = {
-  user: { id: string; email: string } | null;
+  user: { id: string; email: string; nickname: string | null } | null;
 };
 
 async function fetchSession(): Promise<SessionPayload> {
@@ -58,7 +58,8 @@ export function AuthNav() {
     );
   }
 
-  const initials = session.data.user.email
+  const displayName = session.data.user.nickname || session.data.user.email;
+  const initials = displayName
     .split("@", 1)[0]
     .slice(0, 2)
     .toUpperCase();
@@ -71,7 +72,7 @@ export function AuthNav() {
         aria-expanded={isMenuOpen}
         aria-haspopup="menu"
         aria-label="Abrir menu do perfil"
-        title={session.data.user.email}
+        title={displayName}
         onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
       >
         <span aria-hidden="true">{initials}</span>
@@ -83,6 +84,9 @@ export function AuthNav() {
           </Link>
           <Link href="/perfil" onClick={() => setIsMenuOpen(false)} role="menuitem">
             <UserRound aria-hidden="true" size={17} /> Perfil
+          </Link>
+          <Link href="/configuracoes" onClick={() => setIsMenuOpen(false)} role="menuitem">
+            <Settings aria-hidden="true" size={17} /> Configurações
           </Link>
           <button
             type="button"
