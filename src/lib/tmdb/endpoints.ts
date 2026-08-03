@@ -364,25 +364,46 @@ export async function getTrendingAllPage(
   page = 1,
   filters: CatalogFilters = {},
 ): Promise<PaginatedMedia> {
-  const data = await tmdbFetch<TMDBListResponse<TMDBMultiResult>>(
-    "/trending/all/day",
-    {
-      query: { page },
-      revalidate: CACHE.trending,
-    },
-  );
-  const media = data.results.filter(
-    (item): item is TMDBMediaResult =>
-      item.media_type === "movie" || item.media_type === "tv",
-  );
+  const targetSize = 20;
+  const results: MediaItem[] = [];
+  let sourcePage = page;
+  let totalPages = page;
+  let totalResults = 0;
+
+  // Some titles are removed by editorial and safety filters. Refill the grid
+  // from subsequent TMDB pages so a filtered title does not leave a gap.
+  while (
+    results.length < targetSize &&
+    sourcePage <= totalPages &&
+    sourcePage < page + 3
+  ) {
+    const data = await tmdbFetch<TMDBListResponse<TMDBMultiResult>>(
+      "/trending/all/day",
+      {
+        query: { page: sourcePage },
+        revalidate: CACHE.trending,
+      },
+    );
+    totalPages = data.total_pages;
+    totalResults = data.total_results;
+    const media = data.results.filter(
+      (item): item is TMDBMediaResult =>
+        item.media_type === "movie" || item.media_type === "tv",
+    );
+    const allowed = await filterAllowedMedia(media.map(mapMediaResult));
+    results.push(
+      ...allowed.filter(
+        (item) => !filters.mediaType || item.mediaType === filters.mediaType,
+      ),
+    );
+    sourcePage += 1;
+  }
 
   return {
-    page: data.page,
-    results: (await filterAllowedMedia(media.map(mapMediaResult))).filter(
-      (item) => !filters.mediaType || item.mediaType === filters.mediaType,
-    ),
-    totalPages: Math.min(data.total_pages, 500),
-    totalResults: data.total_results,
+    page,
+    results: results.slice(0, targetSize),
+    totalPages: Math.min(totalPages, 500),
+    totalResults,
   };
 }
 

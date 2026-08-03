@@ -3,31 +3,44 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Film, LoaderCircle, Search } from "lucide-react";
+import { Film, LoaderCircle, Search, X } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
 import type { MediaItem, PaginatedMedia } from "@/src/lib/tmdb/types";
 
-export function SearchInput() {
+export function SearchInput({
+  compact = false,
+  onCompactOpenChange,
+}: {
+  compact?: boolean;
+  onCompactOpenChange?: (isOpen: boolean) => void;
+}) {
   const router = useRouter();
   const searchRootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [isCompactOpen, setIsCompactOpen] = useState(false);
   const normalizedQuery = query.trim();
 
   useEffect(() => {
     function closeOnOutsideClick(event: PointerEvent) {
       if (!searchRootRef.current?.contains(event.target as Node)) {
         setOpen(false);
+        setIsCompactOpen(false);
       }
     }
 
     document.addEventListener("pointerdown", closeOnOutsideClick);
     return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
   }, []);
+
+  useEffect(() => {
+    if (compact) onCompactOpenChange?.(isCompactOpen);
+  }, [compact, isCompactOpen, onCompactOpenChange]);
 
   useEffect(() => {
     if (normalizedQuery.length < 2) return;
@@ -92,8 +105,26 @@ export function SearchInput() {
     );
   }
 
+  function openCompactSearch() {
+    setIsCompactOpen(true);
+    window.requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
   return (
-    <div className="search-wrap" ref={searchRootRef}>
+    <div
+      className={`search-wrap ${compact ? "search-wrap-compact" : ""} ${isCompactOpen ? "is-open" : ""}`}
+      ref={searchRootRef}
+    >
+      {compact && (
+        <button
+          aria-label="Abrir pesquisa"
+          className="search-compact-trigger"
+          onClick={openCompactSearch}
+          type="button"
+        >
+          <Search aria-hidden="true" strokeWidth={1.8} />
+        </button>
+      )}
       <form className="search-form" role="search" onSubmit={handleSubmit}>
         <label className="sr-only" htmlFor="catalog-search">
           Pesquisar séries e filmes pelo nome
@@ -104,12 +135,16 @@ export function SearchInput() {
           autoComplete="off"
           className="search-input"
           id="catalog-search"
+          ref={inputRef}
           type="search"
           value={query}
           onChange={(event) => handleQueryChange(event.target.value)}
           onFocus={() => normalizedQuery.length >= 2 && setOpen(true)}
           onKeyDown={(event) => {
-            if (event.key === "Escape") setOpen(false);
+            if (event.key === "Escape") {
+              setOpen(false);
+              setIsCompactOpen(false);
+            }
           }}
           placeholder="Pesquisar séries e filmes pelo nome..."
         />
@@ -126,6 +161,19 @@ export function SearchInput() {
           )}
         </button>
       </form>
+      {compact && (
+        <button
+          aria-label="Fechar pesquisa"
+          className="search-compact-close"
+          onClick={() => {
+            setOpen(false);
+            setIsCompactOpen(false);
+          }}
+          type="button"
+        >
+          <X aria-hidden="true" />
+        </button>
+      )}
 
       {open && normalizedQuery.length >= 2 && (
         <div

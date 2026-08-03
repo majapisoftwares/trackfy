@@ -3,14 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArchivedNav, AuthNav, MyListNav } from "./auth/auth-nav";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
+import { AuthNav, MyListNav } from "./auth/auth-nav";
 import { SearchInput } from "./search-input";
 
 export function Header() {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   return (
-    <header className="site-header container">
+    <header
+      className={`site-header container ${isMobileSearchOpen ? "is-mobile-search-open" : ""}`}
+    >
       <Link href="/" aria-label="Trackfy — início">
         <Image
           className="logo-mark"
@@ -21,18 +27,37 @@ export function Header() {
           priority
         />
       </Link>
-      <nav className="header-nav" aria-label="Navegação principal">
+      <SearchInput
+        compact
+        onCompactOpenChange={(isOpen) => {
+          setIsMobileSearchOpen(isOpen);
+          if (isOpen) setIsMobileMenuOpen(false);
+        }}
+      />
+      <button
+        aria-controls="main-navigation"
+        aria-expanded={isMobileMenuOpen}
+        aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+        className="mobile-menu-button"
+        onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+        type="button"
+      >
+        {isMobileMenuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+      </button>
+      <nav
+        className={`header-nav ${isMobileMenuOpen ? "is-open" : ""}`}
+        id="main-navigation"
+        aria-label="Navegação principal"
+      >
         {pathname !== "/" && (
           <Link className="nav-link" href="/">
             Início
           </Link>
         )}
         <MyListNav />
-        <ArchivedNav />
-        <Link className="nav-link" href="/populares">
+        <Link className="nav-link nav-popular" href="/populares">
           Populares
         </Link>
-        <SearchInput />
         <AuthNav />
       </nav>
     </header>

@@ -29,6 +29,7 @@ export type AuthUser = {
   id: string;
   email: string;
   ownerId: string;
+  createdAt: string;
 };
 
 export type CreatedAuthSession = {
@@ -69,6 +70,7 @@ function toAuthUser(
     id: document._id.toHexString(),
     email: document.email,
     ownerId: document.ownerId,
+    createdAt: document.createdAt.toISOString(),
   };
 }
 

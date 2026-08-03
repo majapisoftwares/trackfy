@@ -189,7 +189,7 @@ export function ContentDetail({
       setIsSeriesCompleting(true);
       window.setTimeout(() => setIsSeriesCompleting(false), 900);
     }
-    update({ watched: nextWatched, inList: nextWatched || inList });
+    update({ watched: nextWatched });
 
     if (content.mediaType === "tv" && allReleasedEpisodeKeys.length > 0) {
       updateEpisodes({

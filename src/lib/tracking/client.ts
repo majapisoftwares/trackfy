@@ -85,9 +85,13 @@ export function useTracking(
       const previous = queryClient.getQueryData<TrackingEntry | null>(queryKey);
       const current =
         previous ?? createOptimisticEntry(mediaType, mediaId, metadata);
+      const shouldArchiveWatchedListItem = patch.watched === true && current.inList;
       queryClient.setQueryData<TrackingEntry>(queryKey, {
         ...current,
         ...patch,
+        ...(shouldArchiveWatchedListItem
+          ? { inList: false, archived: true }
+          : {}),
         updatedAt: new Date().toISOString(),
       });
       return { previous };

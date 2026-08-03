@@ -108,6 +108,7 @@ export type TMDBTVShowDetails = TMDBTVShow & {
   networks: Array<{ id: number; name: string }>;
   number_of_episodes: number;
   number_of_seasons: number;
+  episode_run_time?: number[];
   seasons: Array<{
     id: number;
     name: string;

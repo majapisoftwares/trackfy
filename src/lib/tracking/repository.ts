@@ -144,6 +144,12 @@ export async function updateTrackingEntry(
 ): Promise<TrackingEntry> {
   const collection = await getTrackingCollection();
   const now = new Date();
+  const current = await collection.findOne(
+    entryFilter(ownerId, mediaType, mediaId),
+  );
+  // A title marked as watched is no longer actionable from the user's list.
+  // Keep this invariant on the server so it also applies outside the detail UI.
+  const shouldArchiveWatchedListItem = patch.watched === true && current?.inList;
   const setValues: Partial<TrackingEntryDocument> = {
     title: patch.title,
     updatedAt: now,
@@ -154,6 +160,10 @@ export async function updateTrackingEntry(
   if (patch.archived !== undefined) setValues.archived = patch.archived;
   if (patch.watched !== undefined) setValues.watched = patch.watched;
   if (patch.rating !== undefined) setValues.rating = patch.rating;
+  if (shouldArchiveWatchedListItem) {
+    setValues.inList = false;
+    setValues.archived = true;
+  }
 
   const document = await collection.findOneAndUpdate(
     entryFilter(ownerId, mediaType, mediaId),
