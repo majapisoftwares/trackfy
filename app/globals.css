@@ -184,7 +184,8 @@ a {
   .dashboard-main .hero-shell { min-height: 370px; margin-top: 20px; overflow: hidden; border: 1px solid var(--border); border-radius: 16px; }
   .dashboard-main .hero-content { width: 100%; padding: 92px 36px 36px; }
   .dashboard-main .content-section { width: 100%; }
-  .dashboard-main .streaming-section { width: 100%; }
+  .dashboard-main .streaming-section,
+  .dashboard-main .genre-section { width: 100%; }
   .dashboard-main .content-stack { padding-top: 40px; }
 }
 
