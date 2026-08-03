@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ContentDetail } from "@/components/content-detail";
+import { DashboardShell } from "@/components/dashboard-shell";
 import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
 import { getContentDetails } from "@/data/content";
 
 type PageProps = {
@@ -23,10 +23,9 @@ export default async function ContentPage({ params }: PageProps) {
 
   return (
     <>
-      <div className="detail-header-wrap">
-        <Header />
-      </div>
-      <ContentDetail content={content} />
+      <DashboardShell>
+        <ContentDetail content={content} />
+      </DashboardShell>
       <Footer />
     </>
   );

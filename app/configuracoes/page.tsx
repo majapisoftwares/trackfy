@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
+import { DashboardShell } from "@/components/dashboard-shell";
 import { SettingsScreen } from "@/components/settings-screen";
 import { AUTH_COOKIE_NAME } from "@/src/lib/auth/session";
 import { findAuthUserBySessionToken } from "@/src/lib/auth/repository";
@@ -11,5 +11,5 @@ export default async function SettingsPage() {
   const user = token ? await findAuthUserBySessionToken(token) : null;
   if (!user) redirect("/login");
 
-  return <><main className="settings-page"><Header /><SettingsScreen user={user} /></main><Footer /></>;
+  return <><DashboardShell><section className="settings-page"><SettingsScreen user={user} /></section></DashboardShell><Footer /></>;
 }

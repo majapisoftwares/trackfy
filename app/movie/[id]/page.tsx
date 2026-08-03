@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ContentDetail } from "@/components/content-detail";
+import { DashboardShell } from "@/components/dashboard-shell";
 import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
 import { getTMDBContentPage } from "@/src/lib/tmdb/content";
 
 type PageProps = {
@@ -37,8 +37,9 @@ export default async function MoviePage({ params }: PageProps) {
 
   return (
     <>
-      <div className="detail-header-wrap"><Header /></div>
-      <ContentDetail content={content} recommendations={recommendations} />
+      <DashboardShell>
+        <ContentDetail content={content} recommendations={recommendations} />
+      </DashboardShell>
       <Footer />
     </>
   );

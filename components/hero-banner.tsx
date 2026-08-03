@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Info, Plus } from "lucide-react";
+import { BookCheck, Info, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -71,7 +71,7 @@ export function HeroBanner({ item }: { item: MediaItem }) {
             }
             type="button"
           >
-            {inList ? <Check aria-hidden="true" size={20} /> : <Plus aria-hidden="true" size={20} />}
+            {inList ? <BookCheck aria-hidden="true" size={20} /> : <Plus aria-hidden="true" size={20} />}
             {inList ? "Na minha lista" : "Adicionar à minha lista"}
           </button>}
           <Link className="hero-button secondary" href={href}>

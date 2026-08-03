@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Archive, ChevronDown, List, LogIn, LogOut, Settings, UserRound } from "lucide-react";
+import { Archive, ChevronDown, ChevronRight, List, LogOut, Settings, UserPlus, UserRound } from "lucide-react";
 import { useState } from "react";
 import { type SessionPayload, useAuthSession } from "@/src/lib/auth/client";
 
@@ -34,17 +34,23 @@ export function AuthNav({ drawer = false }: { drawer?: boolean }) {
   if (!session.data?.user) {
     if (drawer) {
       return (
-        <Link className="nav-link drawer-login-link" href="/login">
-          <LogIn aria-hidden="true" className="drawer-nav-icon" size={18} />
-          Entrar
+        <Link className="nav-link nav-create-account drawer-login-link" href="/criar-conta">
+          <UserPlus aria-hidden="true" className="drawer-nav-icon" size={18} />
+          Crie sua conta
+          <ChevronRight aria-hidden="true" size={18} />
         </Link>
       );
     }
     return (
-      <Link className="nav-link" href="/login">
-        <LogIn aria-hidden="true" className="drawer-nav-icon" size={18} />
-        Entrar
-      </Link>
+      <div className="nav-guest-actions">
+        <Link className="nav-link nav-login" href="/login">
+          Login
+        </Link>
+        <Link className="nav-link nav-create-account" href="/criar-conta">
+          Crie sua conta
+          <ChevronRight aria-hidden="true" size={18} />
+        </Link>
+      </div>
     );
   }
 
@@ -99,7 +105,7 @@ export function AuthNav({ drawer = false }: { drawer?: boolean }) {
         onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
       >
         <span className="nav-avatar" aria-hidden="true">{initials}</span>
-        <ChevronDown aria-hidden="true" className="nav-avatar-chevron" size={18} />
+        <span className="nav-user-welcome"><small>Bem-vindo</small><strong>{displayName}</strong></span>
       </button>
       {isMenuOpen && (
         <div className="user-nav-popover" role="menu">

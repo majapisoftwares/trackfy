@@ -8,14 +8,14 @@ import { useState } from "react";
 import { AuthNav, MyListNav } from "./auth/auth-nav";
 import { SearchInput } from "./search-input";
 
-export function Header() {
+export function Header({ dashboard = false }: { dashboard?: boolean }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   return (
     <header
-      className={`site-header container ${isMobileSearchOpen ? "is-mobile-search-open" : ""}`}
+      className={`site-header container ${dashboard ? "dashboard-header" : ""} ${isMobileSearchOpen ? "is-mobile-search-open" : ""}`}
     >
       <Link href="/" aria-label="Trackfy — início">
         <Image

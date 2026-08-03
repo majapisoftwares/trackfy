@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, CircleCheck, Plus } from "lucide-react";
+import { BookCheck, Check, CircleCheck, Info, Plus } from "lucide-react";
 import { useState } from "react";
 import { useAuthSession } from "@/src/lib/auth/client";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
@@ -36,10 +36,13 @@ function AuthenticatedQuickActions({ item, posterUrl }: { item: MediaItem; poste
           aria-pressed={inList}
           onClick={() => update({ inList: !inList })}
         >
-          <Plus aria-hidden="true" size={17} />
+          {inList ? <BookCheck aria-hidden="true" size={17} /> : <Plus aria-hidden="true" size={17} />}
           {inList ? "Na minha lista" : "Minha lista"}
         </button>
       )}
+      <Link className="media-card-quick-action" href={getContentHref(item)}>
+        <Info aria-hidden="true" size={17} /> Informações
+      </Link>
     </div>
   );
 }
@@ -58,15 +61,21 @@ function QuickActions({ item, posterUrl }: { item: MediaItem; posterUrl: string 
       <Link className="media-card-quick-action" href="/login">
         <Plus aria-hidden="true" size={17} /> Minha lista
       </Link>
+      <Link className="media-card-quick-action" href={getContentHref(item)}>
+        <Info aria-hidden="true" size={17} /> Informações
+      </Link>
     </div>
   );
+}
+
+function getContentHref(item: MediaItem) {
+  return item.mediaType === "movie" ? `/movie/${item.id}` : `/series/${item.id}`;
 }
 
 export function MediaCard({ item, showQuickActions = false }: { item: MediaItem; showQuickActions?: boolean }) {
   const [failed, setFailed] = useState(false);
   const posterUrl = getTMDBImageUrl(item.posterPath, "w500");
-  const href =
-    item.mediaType === "movie" ? `/movie/${item.id}` : `/series/${item.id}`;
+  const href = getContentHref(item);
   const typeLabel = item.mediaType === "movie" ? "Filme" : "Série";
 
   return (

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
+import { DashboardShell } from "@/components/dashboard-shell";
 import { MediaRow } from "@/components/media-row";
 import { AUTH_COOKIE_NAME } from "@/src/lib/auth/session";
 import { findAuthUserBySessionToken } from "@/src/lib/auth/repository";
@@ -90,8 +90,8 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <main className="profile-page">
-        <Header />
+      <DashboardShell>
+      <section className="profile-page">
         <section className="profile-content container" aria-labelledby="profile-title">
           <div className="profile-identity">
             <div className="profile-avatar" aria-hidden="true">{initials}</div>
@@ -143,7 +143,8 @@ export default async function ProfilePage() {
             </div>
           </section>
         </section>
-      </main>
+      </section>
+      </DashboardShell>
       <Footer />
     </>
   );

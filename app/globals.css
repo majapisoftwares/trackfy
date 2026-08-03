@@ -81,6 +81,47 @@ a {
   padding-top: 47px;
 }
 
+.app-sidebar { display: none; }
+
+@media (min-width: 901px) {
+  .home-dashboard { min-height: 100vh; padding-left: var(--dashboard-sidebar-width, 208px); transition: padding-left 200ms ease; }
+  .dashboard-main { width: min(1440px, calc(100% - 48px)); margin: 0 auto; }
+  .app-sidebar { position: fixed; z-index: 70; inset: 0 auto 0 0; display: flex; width: var(--dashboard-sidebar-width, 208px); flex-direction: column; overflow: hidden; border-right: 1px solid #18181b; background: #09090b; padding: 24px 14px; transition: width 200ms ease; }
+  .sidebar-brand { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #18181b; padding: 0 0 22px; font-size: 22px; }
+  .sidebar-brand > a { display: flex; min-width: 0; align-items: center; }
+  .sidebar-brand button { display: grid; width: 32px; height: 32px; flex: none; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #a1a1aa; cursor: pointer; }
+  .sidebar-brand button:hover { background: #18181b; color: #fafafa; }
+  .sidebar-brand img { width: 120px; height: auto; }
+  .sidebar-nav { display: grid; gap: 6px; padding-top: 24px; }
+  .sidebar-nav a { display: flex; height: 44px; align-items: center; gap: 12px; border-radius: 9px; color: #a1a1aa; padding: 0 12px; font-size: 15px; font-weight: 500; transition: background-color 180ms ease, color 180ms ease; }
+  .sidebar-nav a:hover, .sidebar-nav a:focus-visible { background: #18181b; color: #fafafa; outline: none; }
+  .sidebar-nav a.active { background: #27272a; color: #fafafa; }
+  .sidebar-nav-bottom { margin-top: auto; }
+  .app-sidebar.is-collapsed { padding-inline: 10px; }
+  .app-sidebar.is-collapsed .sidebar-brand { flex-direction: column; justify-content: center; gap: 4px; }
+  .app-sidebar.is-collapsed .sidebar-nav a { font-size: 0; }
+  .app-sidebar.is-collapsed .sidebar-brand > a { display: flex; }
+  .app-sidebar.is-collapsed .sidebar-brand img { width: 24px; height: 28px; }
+  .app-sidebar.is-collapsed .sidebar-nav a { justify-content: center; gap: 0; padding: 0; }
+  .app-sidebar.is-collapsed .sidebar-nav a svg { width: 20px; height: 20px; }
+  .detail-hero,
+  .episode-hero { width: 100vw; margin-left: calc(50% - 50vw); }
+  .dashboard-header { position: sticky; z-index: 60; top: 0; width: min(1280px, calc(100% - 48px)); isolation: isolate; justify-content: flex-start; margin-inline: auto; background: transparent; padding: 16px 0; }
+  .dashboard-wide .dashboard-header { width: min(1440px, calc(100% - 48px)); }
+  .dashboard-header::before { position: fixed; z-index: 0; top: 0; right: 0; left: var(--dashboard-sidebar-width, 208px); height: 82px; background: rgba(9,9,11,.94); content: ""; backdrop-filter: blur(10px); }
+  .dashboard-header > * { position: relative; z-index: 1; }
+  .dashboard-header > a,
+  .dashboard-header > .header-nav { display: none; }
+  .dashboard-header .search-wrap { max-width: 560px; }
+  .dashboard-header .header-desktop-auth { position: absolute; top: 50%; right: 0; transform: translateY(-50%); }
+  .dashboard-header .search-input { height: 44px; border-radius: 10px; }
+  .dashboard-main .hero-shell { min-height: 370px; margin-top: 20px; overflow: hidden; border: 1px solid #27272a; border-radius: 16px; }
+  .dashboard-main .hero-content { width: 100%; padding: 92px 36px 36px; }
+  .dashboard-main .content-section { width: 100%; }
+  .dashboard-main .streaming-section { width: 100%; }
+  .dashboard-main .content-stack { padding-top: 40px; }
+}
+
 @media (min-width: 641px) {
   .site-header > a {
     order: 1;
@@ -146,6 +187,66 @@ a {
   font-weight: 500;
 }
 
+.nav-create-account {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 10px;
+  background: var(--foreground);
+  color: var(--background);
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.nav-guest-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-login {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  background: #18181b;
+  color: #fafafa;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.nav-login:hover {
+  border-color: #3f3f46;
+  background: #27272a;
+}
+
+.nav-login:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+}
+
+.nav-create-account svg:last-child {
+  margin-left: 2px;
+}
+
+.nav-create-account:hover {
+  background: #e4e4e7;
+  transform: translateY(-1px);
+}
+
+.nav-create-account:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+}
+
 .nav-auth-button {
   border: 0;
   background: transparent;
@@ -190,13 +291,28 @@ a {
   outline-offset: 4px;
 }
 
-.nav-avatar-chevron {
-  color: #d4d4d8;
-  transition: transform 150ms ease;
+.nav-user-welcome {
+  display: grid;
+  gap: 2px;
+  text-align: left;
 }
 
-.nav-user-trigger[aria-expanded="true"] .nav-avatar-chevron {
-  transform: rotate(180deg);
+.nav-user-welcome small {
+  color: #a1a1aa;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 13px;
+}
+
+.nav-user-welcome strong {
+  max-width: 120px;
+  overflow: hidden;
+  color: #fafafa;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav-avatar img {
@@ -313,6 +429,21 @@ a {
   color: var(--muted);
   cursor: pointer;
   padding: 0;
+  transform: translateY(-50%);
+}
+
+.search-shortcut {
+  position: absolute;
+  top: 50%;
+  right: 48px;
+  border: 1px solid #27272a;
+  border-radius: 5px;
+  color: #a1a1aa;
+  padding: 2px 5px;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 14px;
+  pointer-events: none;
   transform: translateY(-50%);
 }
 
@@ -3498,6 +3629,10 @@ a {
 }
 
 @media (max-width: 640px) {
+  .search-shortcut {
+    display: none;
+  }
+
   .hero-shell {
     min-height: 560px;
   }

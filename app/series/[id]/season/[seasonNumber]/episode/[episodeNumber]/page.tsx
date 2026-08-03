@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EpisodeDetail } from "@/components/episode-detail";
+import { DashboardShell } from "@/components/dashboard-shell";
 import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
 import { getEpisodePageData } from "@/src/lib/tmdb/episode";
 
 type PageProps = {
@@ -58,8 +58,9 @@ export default async function EpisodePage({ params }: PageProps) {
 
   return (
     <>
-      <div className="detail-header-wrap"><Header /></div>
-      <EpisodeDetail episode={episode} />
+      <DashboardShell>
+        <EpisodeDetail episode={episode} />
+      </DashboardShell>
       <Footer />
     </>
   );

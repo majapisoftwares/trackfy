@@ -43,6 +43,19 @@ export function SearchInput({
   }, [compact, isCompactOpen, onCompactOpenChange]);
 
   useEffect(() => {
+    function focusWithShortcut(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        if (compact) setIsCompactOpen(true);
+        window.requestAnimationFrame(() => inputRef.current?.focus());
+      }
+    }
+
+    document.addEventListener("keydown", focusWithShortcut);
+    return () => document.removeEventListener("keydown", focusWithShortcut);
+  }, [compact]);
+
+  useEffect(() => {
     if (normalizedQuery.length < 2) return;
 
     const controller = new AbortController();
@@ -160,6 +173,7 @@ export function SearchInput({
             <Search aria-hidden="true" strokeWidth={1.8} />
           )}
         </button>
+        {compact && <kbd className="search-shortcut" aria-hidden="true">Ctrl K</kbd>}
       </form>
       {compact && (
         <button

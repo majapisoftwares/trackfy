@@ -7,7 +7,7 @@ import {
   type UpcomingEpisodeItem,
 } from "@/components/upcoming-episodes-section";
 import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
+import { DashboardShell } from "@/components/dashboard-shell";
 import { HeroBanner } from "@/components/hero-banner";
 import { StreamingSection } from "@/components/streaming-section";
 import { AUTH_COOKIE_NAME } from "@/src/lib/auth/session";
@@ -225,15 +225,14 @@ export default async function Home() {
     });
     return (
       <>
-        <main>
+        <DashboardShell>
           <div className="catalog-error-shell">
-            <Header />
             <div className="catalog-state container" role="alert">
               <h1>O catálogo está temporariamente indisponível</h1>
               <p>Tente novamente em alguns instantes.</p>
             </div>
           </div>
-        </main>
+        </DashboardShell>
         <Footer />
       </>
     );
@@ -242,15 +241,14 @@ export default async function Home() {
   if (!data.featured) {
     return (
       <>
-        <main>
+        <DashboardShell>
           <div className="catalog-error-shell">
-            <Header />
             <div className="catalog-state container">
               <h1>Nenhum título disponível</h1>
               <p>O catálogo ainda não possui conteúdo para exibir.</p>
             </div>
           </div>
-        </main>
+        </DashboardShell>
         <Footer />
       </>
     );
@@ -258,9 +256,8 @@ export default async function Home() {
 
   return (
     <>
-      <main>
+      <DashboardShell wide>
         <div className="hero-shell">
-          <Header />
           <HeroBanner item={data.featured} />
         </div>
         <div className="content-stack">
@@ -339,7 +336,7 @@ export default async function Home() {
             </>
           )}
         </div>
-      </main>
+      </DashboardShell>
       <Footer />
     </>
   );

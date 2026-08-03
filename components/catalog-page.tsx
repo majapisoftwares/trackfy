@@ -1,7 +1,7 @@
 import type { MediaItem } from "@/src/lib/tmdb/types";
 import { CatalogFilters } from "./catalog-filters";
 import { Footer } from "./footer";
-import { Header } from "./header";
+import { DashboardShell } from "./dashboard-shell";
 import { MediaCard } from "./media-card";
 import { Pagination } from "./pagination";
 
@@ -30,8 +30,8 @@ export function CatalogPage({
 }: CatalogPageProps) {
   return (
     <>
-      <main className="catalog-shell">
-        <Header />
+      <DashboardShell>
+        <div className="catalog-shell">
         <section className="catalog-page container">
           <header className="catalog-heading">
             <h1>{title}</h1>
@@ -64,7 +64,8 @@ export function CatalogPage({
             query={filters}
           />
         </section>
-      </main>
+        </div>
+      </DashboardShell>
       <Footer />
     </>
   );
