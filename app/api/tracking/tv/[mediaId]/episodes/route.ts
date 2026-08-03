@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { apiError, jsonNoStore } from "@/src/lib/server/api-response";
+import { requireSameOrigin } from "@/src/lib/server/csrf";
 import { logger } from "@/src/lib/server/logger";
 import { updateTrackedEpisodes } from "@/src/lib/tracking/repository";
 import {
@@ -15,6 +16,9 @@ type RouteContext = {
 };
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
+  const originError = requireSameOrigin(request);
+  if (originError) return originError;
+
   const { mediaId: rawMediaId } = await context.params;
   const mediaId = Number(rawMediaId);
 

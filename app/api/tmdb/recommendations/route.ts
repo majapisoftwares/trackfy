@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRecommendations } from "@/src/lib/tmdb/endpoints";
+import { enforceRateLimit } from "@/src/lib/server/rate-limit";
 import type { MediaType } from "@/src/lib/tmdb/types";
 
 function isMediaType(value: string | null): value is MediaType {
@@ -7,6 +8,13 @@ function isMediaType(value: string | null): value is MediaType {
 }
 
 export async function GET(request: NextRequest) {
+  const rateLimitError = enforceRateLimit(request, {
+    scope: "tmdb-recommendations",
+    limit: 30,
+    windowSeconds: 60,
+  });
+  if (rateLimitError) return rateLimitError;
+
   const mediaType = request.nextUrl.searchParams.get("mediaType");
   const mediaId = Number.parseInt(
     request.nextUrl.searchParams.get("mediaId") ?? "",

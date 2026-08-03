@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSearchResults } from "@/src/lib/tmdb/endpoints";
+import { enforceRateLimit } from "@/src/lib/server/rate-limit";
 
 export async function GET(request: NextRequest) {
+  const rateLimitError = enforceRateLimit(request, {
+    scope: "tmdb-search",
+    limit: 30,
+    windowSeconds: 60,
+  });
+  if (rateLimitError) return rateLimitError;
+
   const query = request.nextUrl.searchParams.get("query")?.trim() ?? "";
   const pageValue = request.nextUrl.searchParams.get("page") ?? "1";
   const page = Number.parseInt(pageValue, 10);

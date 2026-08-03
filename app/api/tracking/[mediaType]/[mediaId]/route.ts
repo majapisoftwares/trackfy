@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { apiError, jsonNoStore } from "@/src/lib/server/api-response";
+import { requireSameOrigin } from "@/src/lib/server/csrf";
 import { logger } from "@/src/lib/server/logger";
 import {
   deleteTrackingEntry,
@@ -64,6 +65,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
 }
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
+  const originError = requireSameOrigin(request);
+  if (originError) return originError;
+
   const route = await parseRoute(context);
   if (!route) {
     return apiError(
@@ -110,6 +114,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
+  const originError = requireSameOrigin(request);
+  if (originError) return originError;
+
   const route = await parseRoute(context);
   if (!route) {
     return apiError(

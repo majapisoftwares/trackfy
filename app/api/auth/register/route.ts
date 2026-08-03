@@ -3,11 +3,23 @@ import { establishUserSession } from "@/src/lib/auth/establish-session";
 import { createAuthUser } from "@/src/lib/auth/repository";
 import { parseRegistration } from "@/src/lib/auth/validation";
 import { apiError, jsonNoStore } from "@/src/lib/server/api-response";
+import { requireSameOrigin } from "@/src/lib/server/csrf";
 import { logger } from "@/src/lib/server/logger";
+import { enforceRateLimit } from "@/src/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
+  const originError = requireSameOrigin(request);
+  if (originError) return originError;
+
+  const rateLimitError = enforceRateLimit(request, {
+    scope: "auth-register",
+    limit: 3,
+    windowSeconds: 60 * 60,
+  });
+  if (rateLimitError) return rateLimitError;
+
   let body: unknown;
   try {
     body = await request.json();

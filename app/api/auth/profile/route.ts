@@ -5,6 +5,7 @@ import { getAuthenticatedUser } from "@/src/lib/auth/session";
 import { findAuthUserByEmail, updateAuthUser } from "@/src/lib/auth/repository";
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, normalizeEmail } from "@/src/lib/auth/validation";
 import { apiError, jsonNoStore } from "@/src/lib/server/api-response";
+import { requireSameOrigin } from "@/src/lib/server/csrf";
 import { logger } from "@/src/lib/server/logger";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,6 +21,9 @@ type ProfileBody = {
 export const runtime = "nodejs";
 
 export async function PATCH(request: NextRequest) {
+  const originError = requireSameOrigin(request);
+  if (originError) return originError;
+
   let body: ProfileBody;
   try {
     body = await request.json() as ProfileBody;

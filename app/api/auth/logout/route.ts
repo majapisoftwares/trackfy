@@ -6,12 +6,16 @@ import {
 } from "@/src/lib/auth/session";
 import { deleteAuthSession } from "@/src/lib/auth/repository";
 import { jsonNoStore } from "@/src/lib/server/api-response";
+import { requireSameOrigin } from "@/src/lib/server/csrf";
 import { logger } from "@/src/lib/server/logger";
 import { attachTrackingOwner } from "@/src/lib/tracking/session";
 
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
+  const originError = requireSameOrigin(request);
+  if (originError) return originError;
+
   const token = getAuthToken(request);
 
   if (token) {

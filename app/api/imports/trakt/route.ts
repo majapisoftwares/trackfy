@@ -9,9 +9,13 @@ import {
   updateTrackingEntry,
 } from "@/src/lib/tracking/repository";
 import { apiError, jsonNoStore } from "@/src/lib/server/api-response";
+import { requireSameOrigin } from "@/src/lib/server/csrf";
 import { logger } from "@/src/lib/server/logger";
+import { enforceRateLimit } from "@/src/lib/server/rate-limit";
 
 export const runtime = "nodejs";
+const MAX_IMPORT_BODY_BYTES = 2 * 1024 * 1024;
+const IMPORT_CONCURRENCY = 8;
 
 type ResolvedItem = {
   mediaType: "movie" | "tv";
@@ -50,13 +54,53 @@ async function resolveItem(item: ReturnType<typeof parseTraktImport>["items"][nu
   }
 }
 
+async function mapWithConcurrency<T, Result>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<Result>,
+): Promise<Result[]> {
+  const results = new Array<Result>(items.length);
+  let nextIndex = 0;
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+      while (nextIndex < items.length) {
+        const index = nextIndex++;
+        results[index] = await mapper(items[index]);
+      }
+    }),
+  );
+
+  return results;
+}
+
 export async function POST(request: NextRequest) {
+  const originError = requireSameOrigin(request);
+  if (originError) return originError;
+
   const user = await getAuthenticatedUser(request);
   if (!user) return apiError("UNAUTHENTICATED", "Faça login para importar seu histórico.", 401);
 
+  const rateLimitError = enforceRateLimit(request, {
+    scope: "trakt-import",
+    identifier: user.id,
+    limit: 2,
+    windowSeconds: 10 * 60,
+  });
+  if (rateLimitError) return rateLimitError;
+
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_IMPORT_BODY_BYTES) {
+    return apiError("IMPORT_TOO_LARGE", "O arquivo de importação excede o limite de 2 MB.", 413);
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    const rawBody = await request.text();
+    if (Buffer.byteLength(rawBody, "utf8") > MAX_IMPORT_BODY_BYTES) {
+      return apiError("IMPORT_TOO_LARGE", "O arquivo de importação excede o limite de 2 MB.", 413);
+    }
+    body = JSON.parse(rawBody);
   } catch {
     return apiError("INVALID_IMPORT", "O arquivo selecionado não contém um JSON válido.", 400);
   }
@@ -80,7 +124,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const resolved = await Promise.all(parsed.items.map(resolveItem));
+    const resolved = await mapWithConcurrency(
+      parsed.items,
+      IMPORT_CONCURRENCY,
+      resolveItem,
+    );
     const found = resolved.filter((item): item is ResolvedItem => item !== null);
     let imported = 0;
     let duplicates = 0;
