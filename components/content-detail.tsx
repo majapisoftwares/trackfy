@@ -10,7 +10,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Eye,
   LogIn,
   Plus,
   Star,
@@ -172,10 +171,11 @@ export function ContentDetail({
   const archived = entry?.archived ?? false;
   const inList = entry?.inList ?? false;
   const rating = entry?.rating ?? 0;
+  const castItems = useMemo(() => content.cast.slice(0, 10), [content.cast]);
   const castRowRef = useRef<HTMLDivElement>(null);
   const [castScroll, setCastScroll] = useState({
     canGoBack: false,
-    canGoForward: content.cast.length > 6,
+    canGoForward: castItems.length > 6,
   });
   const watchedEpisodeKeys = useMemo(
     () =>
@@ -250,7 +250,7 @@ export function ContentDetail({
     update();
 
     return () => observer.disconnect();
-  }, [content.cast.length]);
+  }, [castItems.length]);
 
   function toggleSeasonWatched() {
     updateEpisodes({
@@ -539,12 +539,12 @@ export function ContentDetail({
                     onClick={toggleSeasonWatched}
                     title={allSeasonWatched ? "Desmarcar temporada" : "Marcar temporada como assistida"}
                   >
-                    <Eye size={15} />
+                    <Check size={15} />
                     <span>{allSeasonWatched ? "Assistido" : "Marcar como assistido"}</span>
                   </button>
                 ) : (
                   <Link className="episode-toolbar-btn" href="/login" title="Entrar para acompanhar">
-                    <Eye size={15} />
+                    <Check size={15} />
                     <span>Marcar como assistido</span>
                   </Link>
                 )}
@@ -589,10 +589,10 @@ export function ContentDetail({
         {/* 2. Elenco */}
         <section className="cast-section">
           <h2>{content.mediaType === "tv" ? "Elenco da Série" : "Elenco Principal"}</h2>
-          {content.cast.length > 0 ? (
+          {castItems.length > 0 ? (
             <div className={`cast-carousel ${castScroll.canGoBack ? "can-go-back" : ""} ${castScroll.canGoForward ? "can-go-forward" : ""}`}>
               <div className="cast-row" ref={castRowRef} onScroll={updateCastScroll}>
-                {content.cast.map((person) => (
+                {castItems.map((person) => (
                   <article className="cast-avatar-card" key={person.id}>
                     <div className="cast-avatar-wrap">
                       <Image src={person.photoUrl} alt={person.name} width={90} height={90} />

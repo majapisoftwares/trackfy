@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, MoreVertical, Play } from "lucide-react";
+import { Check, MoreVertical } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTracking } from "@/src/lib/tracking/client";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
@@ -198,13 +198,6 @@ export function EpisodeCard({
           )}
           <span className="trakt-poster-overlay" />
 
-          {isHorizontal && (
-            <span className="trakt-play-hint" aria-hidden="true">
-              <span className="trakt-play-hint-icon">
-                <Play size={18} fill="currentColor" />
-              </span>
-            </span>
-          )}
         </button>
 
         {/* 3 dots menu button */}

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "motion/react";
 import { type SessionPayload, useAuthSession } from "@/src/lib/auth/client";
 import { getUserRank } from "@/src/lib/ranking";
 
@@ -31,6 +32,8 @@ const navItems = [
   { href: "/populares", label: "Populares", icon: Flame },
   { href: "/minha-lista", label: "Minha lista", icon: Bookmark },
 ];
+
+const MotionLink = motion.create(Link);
 
 export function AppSidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -142,32 +145,58 @@ export function AppSidebar() {
       {/* ---------------------------------------------------- */}
       {/* DESKTOP SIDEBAR (Visible >= 901px)                  */}
       {/* ---------------------------------------------------- */}
-      <aside
+      <motion.aside
         className={`app-sidebar floating-sidebar ${isExpanded ? "is-expanded" : "is-collapsed"}`}
+        animate={{
+          width: isExpanded ? 220 : 64,
+          paddingLeft: isExpanded ? 12 : 8,
+          paddingRight: isExpanded ? 12 : 8,
+        }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
         aria-label="Menu lateral"
       >
         {/* Top: Logo & Toggle */}
         <div className="sidebar-top">
           <Link href="/" className="sidebar-logo-link" title="Trackfy — Início">
-            {isExpanded ? (
-              <Image
-                className="sidebar-logo-full"
-                src="/assets/logo-trackfy.svg"
-                width={112}
-                height={28}
-                alt="Trackfy"
-                priority
-              />
-            ) : (
-              <Image
-                className="sidebar-logo-icon"
-                src="/assets/logo-mark.svg"
-                width={26}
-                height={30}
-                alt="Trackfy"
-                priority
-              />
-            )}
+            <AnimatePresence initial={false} mode="wait">
+              {isExpanded ? (
+                <motion.span
+                  key="full-logo"
+                  className="sidebar-logo-motion"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.14, ease: "easeOut" }}
+                >
+                  <Image
+                    className="sidebar-logo-full"
+                    src="/assets/logo-trackfy.svg"
+                    width={112}
+                    height={28}
+                    alt="Trackfy"
+                    priority
+                  />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="mark-logo"
+                  className="sidebar-logo-motion"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.14, ease: "easeOut" }}
+                >
+                  <Image
+                    className="sidebar-logo-icon"
+                    src="/assets/logo-mark.svg"
+                    width={26}
+                    height={30}
+                    alt="Trackfy"
+                    priority
+                  />
+                </motion.span>
+              )}
+            </AnimatePresence>
           </Link>
           <button
             type="button"
@@ -182,10 +211,14 @@ export function AppSidebar() {
 
         {/* Center: Main navigation icons and labels */}
         <nav className="sidebar-nav">
-          {navItems.map(({ href, label, icon: Icon }) => (
-            <Link
+          {navItems
+            .filter(({ href }) => isAuthenticated || href !== "/minha-lista")
+            .map(({ href, label, icon: Icon }) => (
+            <MotionLink
               key={href}
               href={href}
+              layout="position"
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className={`sidebar-nav-item ${isActive(href) ? "active" : ""}`}
               title={label}
               aria-label={label}
@@ -193,33 +226,63 @@ export function AppSidebar() {
               <span className="sidebar-nav-icon">
                 <Icon size={20} />
               </span>
-              {isExpanded && <span className="sidebar-nav-label">{label}</span>}
-            </Link>
-          ))}
+              <AnimatePresence initial={false}>
+                {isExpanded && (
+                  <motion.span
+                    className="sidebar-nav-label"
+                    initial={{ opacity: 0, width: 0, x: -8 }}
+                    animate={{ opacity: 1, width: "auto", x: 0 }}
+                    exit={{ opacity: 0, width: 0, x: -8 }}
+                    transition={{ duration: 0.16, ease: "easeOut" }}
+                  >
+                    {label}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </MotionLink>
+            ))}
 
         </nav>
 
         {/* Bottom: Settings, Divider & User Avatar */}
         <div className="sidebar-bottom">
-          <Link
-            href="/configuracoes"
-            className={`sidebar-nav-item ${isActive("/configuracoes") ? "active" : ""}`}
-            title="Configurações"
-            aria-label="Configurações"
-          >
-            <span className="sidebar-nav-icon">
-              <Settings size={20} />
-            </span>
-            {isExpanded && <span className="sidebar-nav-label">Configurações</span>}
-          </Link>
+          {isAuthenticated && (
+            <MotionLink
+              href="/configuracoes"
+              layout="position"
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className={`sidebar-nav-item ${isActive("/configuracoes") ? "active" : ""}`}
+              title="Configurações"
+              aria-label="Configurações"
+            >
+              <span className="sidebar-nav-icon">
+                <Settings size={20} />
+              </span>
+              <AnimatePresence initial={false}>
+                {isExpanded && (
+                  <motion.span
+                    className="sidebar-nav-label"
+                    initial={{ opacity: 0, width: 0, x: -8 }}
+                    animate={{ opacity: 1, width: "auto", x: 0 }}
+                    exit={{ opacity: 0, width: 0, x: -8 }}
+                    transition={{ duration: 0.16, ease: "easeOut" }}
+                  >
+                    Configurações
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </MotionLink>
+          )}
 
           <div className="sidebar-divider" aria-hidden="true" />
 
           {/* User profile / avatar */}
           {isAuthenticated ? (
             <div className="sidebar-user-wrapper" ref={userMenuRef}>
-              <button
+              <motion.button
                 type="button"
+                layout="position"
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className={`sidebar-user-trigger ${isExpanded ? "is-expanded" : ""}`}
                 onClick={() => setIsUserMenuOpen((open) => !open)}
                 aria-expanded={isUserMenuOpen}
@@ -227,17 +290,37 @@ export function AppSidebar() {
                 title={displayName}
               >
                 <span className="sidebar-user-avatar">{initials}</span>
-                {isExpanded && (
-                  <div className="sidebar-user-info">
-                    <strong className="sidebar-user-name">{displayName}</strong>
-                    <span className={`sidebar-user-role rank-tone-${rank.tone}`}>
-                      <i aria-hidden="true" />
-                      {rank.name}
-                    </span>
-                  </div>
-                )}
-                {isExpanded && <ChevronRight size={15} className="sidebar-user-chevron" />}
-              </button>
+                <AnimatePresence initial={false}>
+                  {isExpanded && (
+                    <motion.div
+                      className="sidebar-user-info"
+                      initial={{ opacity: 0, width: 0, x: -8 }}
+                      animate={{ opacity: 1, width: "auto", x: 0 }}
+                      exit={{ opacity: 0, width: 0, x: -8 }}
+                      transition={{ duration: 0.16, ease: "easeOut" }}
+                    >
+                      <strong className="sidebar-user-name">{displayName}</strong>
+                      <span className={`sidebar-user-role rank-tone-${rank.tone}`}>
+                        <i aria-hidden="true" />
+                        {rank.name}
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <AnimatePresence initial={false}>
+                  {isExpanded && (
+                    <motion.span
+                      className="sidebar-user-chevron"
+                      initial={{ opacity: 0, x: -4 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -4 }}
+                      transition={{ duration: 0.14, ease: "easeOut" }}
+                    >
+                      <ChevronRight size={15} />
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
 
               {isUserMenuOpen && (
                 <div className={`sidebar-user-popover ${isExpanded ? "popover-expanded" : ""}`} role="menu">
@@ -285,8 +368,10 @@ export function AppSidebar() {
               )}
             </div>
           ) : (
-            <Link
+            <MotionLink
               href="/login"
+              layout="position"
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className={`sidebar-user-trigger sidebar-guest-trigger ${isExpanded ? "is-expanded" : ""}`}
               title="Entrar"
               aria-label="Entrar"
@@ -294,16 +379,24 @@ export function AppSidebar() {
               <span className="sidebar-user-avatar guest-avatar">
                 <UserRound size={18} />
               </span>
-              {isExpanded && (
-                <div className="sidebar-user-info">
-                  <strong className="sidebar-user-name">Entrar</strong>
-                  <span className="sidebar-user-role">Fazer login</span>
-                </div>
-              )}
-            </Link>
+              <AnimatePresence initial={false}>
+                {isExpanded && (
+                  <motion.div
+                    className="sidebar-user-info"
+                    initial={{ opacity: 0, width: 0, x: -8 }}
+                    animate={{ opacity: 1, width: "auto", x: 0 }}
+                    exit={{ opacity: 0, width: 0, x: -8 }}
+                    transition={{ duration: 0.16, ease: "easeOut" }}
+                  >
+                    <strong className="sidebar-user-name">Entrar</strong>
+                    <span className="sidebar-user-role">Fazer login</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </MotionLink>
           )}
         </div>
-      </aside>
+      </motion.aside>
 
       {/* ---------------------------------------------------- */}
       {/* MOBILE FIXED BOTTOM MENU (Visible <= 900px)         */}
@@ -349,17 +442,19 @@ export function AppSidebar() {
         </Link>
 
         {/* Tab 4: Minha Lista */}
-        <Link
-          href="/minha-lista"
-          className={`mobile-tab-btn ${isActive("/minha-lista") ? "active" : ""}`}
-          aria-current={isActive("/minha-lista") ? "page" : undefined}
-          title="Minha lista"
-          aria-label="Minha lista"
-        >
-          <span className="mobile-tab-icon-wrap">
-            <Bookmark size={21} strokeWidth={2} />
-          </span>
-        </Link>
+        {isAuthenticated && (
+          <Link
+            href="/minha-lista"
+            className={`mobile-tab-btn ${isActive("/minha-lista") ? "active" : ""}`}
+            aria-current={isActive("/minha-lista") ? "page" : undefined}
+            title="Minha lista"
+            aria-label="Minha lista"
+          >
+            <span className="mobile-tab-icon-wrap">
+              <Bookmark size={21} strokeWidth={2} />
+            </span>
+          </Link>
+        )}
 
         {/* Tab 5: Perfil / Menu (Abre Bottom Sheet com Menu de opções) */}
         <button

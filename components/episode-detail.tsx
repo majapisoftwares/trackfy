@@ -5,7 +5,6 @@ import {
   Check,
   CheckCheck,
   ChevronDown,
-  Eye,
   LogIn,
   Star,
 } from "lucide-react";
@@ -289,7 +288,7 @@ export function EpisodeDetail({
                       : "Marcar temporada como assistida"
                   }
                 >
-                  <Eye size={15} />
+                  <Check size={15} />
                   <span>
                     {allSeasonWatched ? "Assistido" : "Marcar como assistido"}
                   </span>
@@ -300,7 +299,7 @@ export function EpisodeDetail({
                   href="/login"
                   title="Entrar para acompanhar"
                 >
-                  <Eye size={15} />
+                  <Check size={15} />
                   <span>Marcar como assistido</span>
                 </Link>
               )}
