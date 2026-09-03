@@ -37,7 +37,7 @@ export default async function MoviePage({ params }: PageProps) {
 
   return (
     <>
-      <DashboardShell>
+      <DashboardShell wide>
         <ContentDetail content={content} recommendations={recommendations} />
       </DashboardShell>
       <Footer />

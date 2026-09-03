@@ -5,7 +5,7 @@ import { enforceRateLimit } from "@/src/lib/server/rate-limit";
 export async function GET(request: NextRequest) {
   const rateLimitError = enforceRateLimit(request, {
     scope: "tmdb-search",
-    limit: 30,
+    limit: 60,
     windowSeconds: 60,
   });
   if (rateLimitError) return rateLimitError;

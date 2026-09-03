@@ -15,6 +15,19 @@ export default async function PopularPage({
   searchParams,
 }: PopularPageProps) {
   const { page, filters, values } = parseCatalogSearchParams(await searchParams);
+
+  const tabHref = (mediaType?: "movie" | "tv") => {
+    const params = new URLSearchParams();
+
+    Object.entries(values).forEach(([key, value]) => {
+      if (value && key !== "mediaType") params.set(key, value);
+    });
+    if (mediaType) params.set("mediaType", mediaType);
+
+    const query = params.toString();
+    return query ? `/populares?${query}` : "/populares";
+  };
+
   const data =
     filters.mediaType === "movie"
       ? await getPopularMoviesPage(page, filters)
@@ -26,15 +39,19 @@ export default async function PopularPage({
 
   return (
     <CatalogPage
-      title="Populares"
-      subtitle="As produções mais assistidas e comentadas do momento em todo o mundo."
       items={data.results}
       currentPage={data.page}
       totalPages={data.totalPages}
       filters={values}
-      showMediaTypeFilter
-      showAdvancedFilters={false}
+      showAdvancedFilters={true}
       showQuickActions
+      infiniteScroll={true}
+      fullBlur
+      tabs={[
+        { label: "Todos", href: tabHref(undefined), active: !filters.mediaType },
+        { label: "Filmes", href: tabHref("movie"), active: filters.mediaType === "movie" },
+        { label: "Programas de TV", href: tabHref("tv"), active: filters.mediaType === "tv" },
+      ]}
     />
   );
 }

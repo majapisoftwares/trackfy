@@ -23,7 +23,7 @@ export default async function ContentPage({ params }: PageProps) {
 
   return (
     <>
-      <DashboardShell>
+      <DashboardShell wide>
         <ContentDetail content={content} />
       </DashboardShell>
       <Footer />

@@ -2,77 +2,113 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { BookCheck, Check, CircleCheck, Info, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  BookmarkMinus,
+  BookmarkPlus,
+  Check,
+  CircleCheck,
+  Info,
+  MoreVertical,
+} from "lucide-react";
 import { useState } from "react";
 import { useAuthSession } from "@/src/lib/auth/client";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
 import { useTracking } from "@/src/lib/tracking/client";
 import type { MediaItem } from "@/src/lib/tmdb/types";
-import { Rating } from "./rating";
-
-function AuthenticatedQuickActions({ item, posterUrl }: { item: MediaItem; posterUrl: string | null }) {
-  const { entry, update } = useTracking(item.mediaType, item.id, {
-    title: item.title,
-    posterUrl,
-  });
-  const watched = entry?.watched ?? false;
-  const inList = entry?.inList ?? false;
-
-  return (
-    <div className="media-card-quick-actions">
-      <button
-        className={`media-card-quick-action ${watched ? "is-watched" : ""}`}
-        type="button"
-        aria-pressed={watched}
-        onClick={() => update({ watched: !watched })}
-      >
-        {watched ? <CircleCheck aria-hidden="true" size={19} /> : <Check aria-hidden="true" size={17} />}
-        {watched ? "Assistido" : "Marcar como assistido"}
-      </button>
-      {!watched && (
-        <button
-          className="media-card-quick-action"
-          type="button"
-          aria-pressed={inList}
-          onClick={() => update({ inList: !inList })}
-        >
-          {inList ? <BookCheck aria-hidden="true" size={17} /> : <Plus aria-hidden="true" size={17} />}
-          {inList ? "Na minha lista" : "Minha lista"}
-        </button>
-      )}
-      <Link className="media-card-quick-action" href={getContentHref(item)}>
-        <Info aria-hidden="true" size={17} /> Informações
-      </Link>
-    </div>
-  );
-}
-
-function QuickActions({ item, posterUrl }: { item: MediaItem; posterUrl: string | null }) {
-  const session = useAuthSession();
-
-  if (session.isPending) return null;
-  if (session.data?.user) return <AuthenticatedQuickActions item={item} posterUrl={posterUrl} />;
-
-  return (
-    <div className="media-card-quick-actions">
-      <Link className="media-card-quick-action" href="/login">
-        <Check aria-hidden="true" size={17} /> Marcar como assistido
-      </Link>
-      <Link className="media-card-quick-action" href="/login">
-        <Plus aria-hidden="true" size={17} /> Minha lista
-      </Link>
-      <Link className="media-card-quick-action" href={getContentHref(item)}>
-        <Info aria-hidden="true" size={17} /> Informações
-      </Link>
-    </div>
-  );
-}
+import { DropdownMenu, type DropdownMenuItem } from "./interior/dropdown";
 
 function getContentHref(item: MediaItem) {
   return item.mediaType === "movie" ? `/movie/${item.id}` : `/series/${item.id}`;
 }
 
-export function MediaCard({ item, showQuickActions = false }: { item: MediaItem; showQuickActions?: boolean }) {
+function MediaCardDropdown({
+  item,
+  posterUrl,
+  href,
+}: {
+  item: MediaItem;
+  posterUrl: string | null;
+  href: string;
+}) {
+  const router = useRouter();
+  const session = useAuthSession();
+  const isLogged = Boolean(session.data?.user);
+
+  const { entry, update } = useTracking(item.mediaType, item.id, {
+    title: item.title,
+    posterUrl,
+  });
+
+  const watched = entry?.watched ?? false;
+  const inList = entry?.inList ?? false;
+
+  const menuItems: DropdownMenuItem[] = [
+    {
+      value: "my-list",
+      label: inList ? "Remover da minha lista" : "Adicionar à minha lista",
+      icon: inList ? (
+        <BookmarkMinus size={14} className="text-white" aria-hidden="true" />
+      ) : (
+        <BookmarkPlus size={14} aria-hidden="true" />
+      ),
+      active: inList,
+      onClick: () => {
+        if (!isLogged) {
+          router.push("/login");
+          return;
+        }
+        update({ inList: !inList });
+      },
+    },
+    {
+      value: "info",
+      label: "Ver detalhes",
+      icon: <Info size={14} aria-hidden="true" />,
+      onClick: () => {
+        router.push(href);
+      },
+    },
+    {
+      value: "watched",
+      label: watched ? "Marcar como não assistido" : "Marcar como assistido",
+      icon: watched ? (
+        <CircleCheck size={14} className="text-white" aria-hidden="true" />
+      ) : (
+        <Check size={14} aria-hidden="true" />
+      ),
+      active: watched,
+      onClick: () => {
+        if (!isLogged) {
+          router.push("/login");
+          return;
+        }
+        update({ watched: !watched });
+      },
+    },
+  ];
+
+  return (
+    <DropdownMenu
+      items={menuItems}
+      side="top"
+      align="right"
+      label={`Opções de ${item.title}`}
+      trigger={
+        <span className="media-card-menu-trigger" aria-hidden="true">
+          <MoreVertical size={15} />
+        </span>
+      }
+    />
+  );
+}
+
+export function MediaCard({
+  item,
+}: {
+  item: MediaItem;
+  showQuickActions?: boolean;
+}) {
   const [failed, setFailed] = useState(false);
   const posterUrl = getTMDBImageUrl(item.posterPath, "w500");
   const href = getContentHref(item);
@@ -80,7 +116,11 @@ export function MediaCard({ item, showQuickActions = false }: { item: MediaItem;
 
   return (
     <article className="media-card" data-ranking-position={item.rankingPosition}>
-      <Link className="media-card-link" href={href} aria-label={`Ver detalhes de ${item.title}`}>
+      <Link
+        className="media-card-link"
+        href={href}
+        aria-label={`Ver detalhes de ${item.title}`}
+      >
         <div className="poster-frame">
           {failed || !posterUrl ? (
             <span className="poster-fallback">Imagem indisponível</span>
@@ -95,17 +135,24 @@ export function MediaCard({ item, showQuickActions = false }: { item: MediaItem;
             />
           )}
         </div>
-        <div className="media-meta">
-          <div className="media-text">
-            <h3 className="media-title">{item.title}</h3>
-            <p className="media-year">
-              {item.year ?? "Data indisponível"} · {typeLabel}
-            </p>
-          </div>
-          <Rating value={item.voteAverage} />
-        </div>
       </Link>
-      {showQuickActions && <QuickActions item={item} posterUrl={posterUrl} />}
+      <div className="media-meta">
+        <div className="media-text">
+          <div className="media-title-row">
+            <Link
+              href={href}
+              className="media-title-link"
+              title={item.title}
+            >
+              <h3 className="media-title">{item.title}</h3>
+            </Link>
+            <MediaCardDropdown item={item} posterUrl={posterUrl} href={href} />
+          </div>
+          <p className="media-year">
+            {item.year ?? "Data indisponível"} · {typeLabel}
+          </p>
+        </div>
+      </div>
     </article>
   );
 }

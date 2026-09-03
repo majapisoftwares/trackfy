@@ -17,7 +17,7 @@ export const mockContent: ContentDetails = {
   mediaType: "tv",
   title: "A Casa Do Dragão",
   year: 2022,
-  status: "Em andamento",
+  status: "Lançando",
   audienceScore: 83,
   imdbRating: 8.1,
   posterUrl: "/assets/content-poster.png",

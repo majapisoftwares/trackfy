@@ -1,11 +1,6 @@
 import { ContentSection } from "@/components/content-section";
-import {
-  ContinueWatchingSection,
-} from "@/components/continue-watching-section";
-import {
-  UpcomingEpisodesSection,
-  type UpcomingEpisodeItem,
-} from "@/components/upcoming-episodes-section";
+import { ContinueWatchingSection } from "@/components/continue-watching-section";
+import { HistorySection } from "@/components/history-section";
 import { Footer } from "@/components/footer";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { HeroBanner } from "@/components/hero-banner";
@@ -16,8 +11,9 @@ import { findAuthUserBySessionToken } from "@/src/lib/auth/repository";
 import { mapMovie, mapTVShow } from "@/src/lib/tmdb/mappers";
 import type { MediaItem } from "@/src/lib/tmdb/types";
 import { listTrackingEntries } from "@/src/lib/tracking/repository";
-import { episodeKey, type TrackingEntry } from "@/src/lib/tracking/types";
+import type { TrackingEntry } from "@/src/lib/tracking/types";
 import { getContinueWatchingItems } from "@/src/lib/tracking/continue-watching";
+import { getWatchHistoryItems } from "@/src/lib/tracking/history";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import {
@@ -25,7 +21,6 @@ import {
   getPopularMovies,
   getPopularTVShows,
   getRecommendations,
-  getTVSeasonDetails,
   getTVShowDetails,
   getTrendingAll,
   selectFeaturedContent,
@@ -56,93 +51,15 @@ function isFutureEpisode(airDate: string | null): airDate is string {
   return Boolean(airDate && airDate > today);
 }
 
-async function getUpcomingEpisodeItem(
-  entry: TrackingEntry,
-): Promise<UpcomingEpisodeItem | null> {
-  if (entry.mediaType !== "tv" || entry.watchedEpisodes.length === 0) {
-    return null;
-  }
-
-  const lastWatched = [...entry.watchedEpisodes].sort(
-    (left, right) =>
-      right.seasonNumber - left.seasonNumber ||
-      right.episodeNumber - left.episodeNumber,
-  )[0];
-  const watched = new Set(entry.watchedEpisodes.map(episodeKey));
-
-  try {
-    const season = await getTVSeasonDetails(
-      entry.mediaId,
-      lastWatched.seasonNumber,
-    );
-    let nextEpisode = season.episodes.find(
-      (episode) =>
-        episode.episode_number === lastWatched.episodeNumber + 1 &&
-        !watched.has(`${season.season_number}:${episode.episode_number}`),
-    );
-
-    if (!nextEpisode) {
-      const show = await getTVShowDetails(entry.mediaId);
-      const nextSeason = show.seasons
-        .filter((candidate) => candidate.season_number > lastWatched.seasonNumber)
-        .sort((left, right) => left.season_number - right.season_number)[0];
-
-      if (!nextSeason) return null;
-
-      const followingSeason = await getTVSeasonDetails(
-        entry.mediaId,
-        nextSeason.season_number,
-      );
-      nextEpisode = followingSeason.episodes.find(
-        (episode) =>
-          episode.episode_number > 0 &&
-          !watched.has(
-            `${followingSeason.season_number}:${episode.episode_number}`,
-          ),
-      );
-
-      if (!nextEpisode || !isFutureEpisode(nextEpisode.air_date)) return null;
-
-      return {
-        seriesId: entry.mediaId,
-        seriesTitle: show.name ?? entry.title,
-        episodeTitle: nextEpisode.name || `Episódio ${nextEpisode.episode_number}`,
-        seasonNumber: followingSeason.season_number,
-        episodeNumber: nextEpisode.episode_number,
-        stillPath: nextEpisode.still_path,
-        posterUrl: show.poster_path
-          ? `https://image.tmdb.org/t/p/w500${show.poster_path}`
-          : entry.posterUrl,
-        airDate: nextEpisode.air_date,
-      };
-    }
-
-    if (!isFutureEpisode(nextEpisode.air_date)) return null;
-
-    return {
-      seriesId: entry.mediaId,
-      seriesTitle: entry.title,
-      episodeTitle: nextEpisode.name || `Episódio ${nextEpisode.episode_number}`,
-      seasonNumber: season.season_number,
-      episodeNumber: nextEpisode.episode_number,
-      stillPath: nextEpisode.still_path,
-      posterUrl: entry.posterUrl,
-      airDate: nextEpisode.air_date,
-    };
-  } catch {
-    return null;
-  }
-}
-
 async function getPersonalizedHome(ownerId: string) {
   const tracking = await listTrackingEntries(ownerId, { limit: 100, offset: 0 });
   const entries = tracking.items;
   const recommendationSeeds = entries.filter(
     (entry) => entry.inList || entry.watched || entry.watchedEpisodes.length > 0,
   );
-  const [continueWatching, upcomingEpisodes, myList, recommendationGroups] = await Promise.all([
+  const [continueWatching, history, myList, recommendationGroups] = await Promise.all([
     getContinueWatchingItems(entries),
-    Promise.all(entries.map(getUpcomingEpisodeItem)),
+    getWatchHistoryItems(entries, 12),
     Promise.all(entries.filter((entry) => entry.inList).map(getTrackedMedia)),
     Promise.all(
       recommendationSeeds.slice(0, 4).map(async (entry) => ({
@@ -161,7 +78,7 @@ async function getPersonalizedHome(ownerId: string) {
       const key = `${item.mediaType}:${item.id}`;
       return !knownIds.has(key) && all.findIndex((candidate) => `${candidate.item.mediaType}:${candidate.item.id}` === key) === index;
     })
-    .slice(0, 6)
+    .slice(0, 8)
     .map(({ item, sourceTitle }) => {
       recommendationReasons[`${item.mediaType}-${item.id}`] = `Porque você acompanhou ${sourceTitle}`;
       return item;
@@ -178,16 +95,14 @@ async function getPersonalizedHome(ownerId: string) {
       (entry) => entry.watchedEpisodes.length > 0,
     ),
     continueWatching: continueWatching.filter(
-        (item) =>
-          item.airDate !== null &&
-          item.airDate !== undefined &&
-          !isFutureEpisode(item.airDate),
-      ),
-    upcomingEpisodes: upcomingEpisodes
-      .filter((item): item is UpcomingEpisodeItem => item !== null)
-      .sort((left, right) => left.airDate.localeCompare(right.airDate)),
-    myList: myList.filter((item): item is MediaItem => item !== null).slice(0, 6),
-    hasFullMyList: myList.filter((item): item is MediaItem => item !== null).length >= 6,
+      (item) =>
+        item.airDate !== null &&
+        item.airDate !== undefined &&
+        !isFutureEpisode(item.airDate),
+    ),
+    history,
+    myList: myList.filter((item): item is MediaItem => item !== null).slice(0, 8),
+    hasFullMyList: myList.filter((item): item is MediaItem => item !== null).length >= 8,
     recommendations,
     recommendationReasons,
   };
@@ -207,17 +122,41 @@ export default async function Home() {
       getPopularTVShows(),
       user ? getPersonalizedHome(user.ownerId) : Promise.resolve(null),
     ]);
+    const allPopular = [
+      ...trending,
+      ...popularTVShows,
+      ...popularMovies,
+    ].filter(
+      (item, index, self) =>
+        Boolean(item.backdropPath) &&
+        Boolean(item.overview) &&
+        item.title !== "Título indisponível" &&
+        self.findIndex(
+          (candidate) =>
+            candidate.id === item.id && candidate.mediaType === item.mediaType,
+        ) === index,
+    );
+
+    const uncompletedCandidates = allPopular.filter(
+      (item) =>
+        !personalized?.watchedMediaKeys.has(`${item.mediaType}-${item.id}`),
+    );
+
+    const featuredList = (
+      uncompletedCandidates.length >= 3 ? uncompletedCandidates : allPopular
+    ).slice(0, 6);
+
+    const primaryFeatured =
+      selectFeaturedContent(uncompletedCandidates) ??
+      featuredList[0] ??
+      selectFeaturedContent(trending);
+
     data = {
-      featured:
-        selectFeaturedContent(
-          trending.filter(
-            (item) =>
-              !personalized?.watchedMediaKeys.has(`${item.mediaType}-${item.id}`),
-          ),
-        ) ?? selectFeaturedContent(trending),
-      trending: trending.slice(0, 6),
-      popularMovies: popularMovies.slice(0, 6),
-      popularTVShows: popularTVShows.slice(0, 6),
+      featured: primaryFeatured,
+      featuredList,
+      trending: trending.slice(0, 8),
+      popularMovies: popularMovies.slice(0, 8),
+      popularTVShows: popularTVShows.slice(0, 8),
       personalized,
     };
   } catch (error) {
@@ -239,91 +178,58 @@ export default async function Home() {
     );
   }
 
-  if (!data.featured) {
-    return (
-      <>
-        <DashboardShell>
-          <div className="catalog-error-shell">
-            <div className="catalog-state container">
-              <h1>Nenhum título disponível</h1>
-              <p>O catálogo ainda não possui conteúdo para exibir.</p>
-            </div>
-          </div>
-        </DashboardShell>
-        <Footer />
-      </>
-    );
-  }
-
   return (
     <>
       <DashboardShell wide>
-        <div className="hero-shell">
-          <HeroBanner item={data.featured} />
-        </div>
-        <div className="content-stack">
+        {/* Banner em destaque no topo do site com base nos mais populares */}
+        {data.featuredList && data.featuredList.length > 0 && (
+          <div className="hero-shell">
+            <HeroBanner
+              items={data.featuredList}
+              initialItem={data.featured ?? undefined}
+            />
+          </div>
+        )}
+
+        <div className={`content-stack ${data.personalized ? "logged-in-stack" : ""}`}>
           {data.personalized ? (
-            data.personalized.isFirstAccess ? (
-              <>
-                <ContentSection
-                  id="minha-lista"
-                  title="Minha lista"
-                  subtitle="Conteúdos que você salvou para assistir"
-                  items={data.personalized.myList}
-                  showAll={data.personalized.hasFullMyList}
-                  href="/minha-lista"
-                  emptyAction={{
-                    href: "/populares",
-                    label: "Explorar populares",
-                  }}
+            <>
+              {/* 1. Assistir a seguir */}
+              {data.personalized.continueWatching.length > 0 && (
+                <ContinueWatchingSection
+                  items={data.personalized.continueWatching.slice(0, 8)}
                 />
-                <ContentSection
-                  id="populares"
-                  title="Tendências"
-                  subtitle="Produções em alta neste momento"
-                  items={data.trending}
-                  href="/populares"
-                />
-                <StreamingSection />
-                <GenreSection />
-              </>
-            ) : (
-              <>
-                {data.personalized.hasWatchedEpisodes && (
-                  <>
-                    <ContinueWatchingSection
-                      items={data.personalized.continueWatching.slice(0, 3)}
-                    />
-                    <UpcomingEpisodesSection
-                      items={data.personalized.upcomingEpisodes}
-                    />
-                  </>
-                )}
-                <ContentSection
-                  id="minha-lista"
-                  title="Minha lista"
-                  subtitle="Conteúdos que você salvou para assistir"
-                  items={data.personalized.myList}
-                  showAll={data.personalized.hasFullMyList}
-                  href="/minha-lista"
-                />
+              )}
+
+              {/* 2. Histórico */}
+              {data.personalized.history.length > 0 && (
+                <HistorySection items={data.personalized.history.slice(0, 8)} />
+              )}
+
+              {/* 3. Minha lista */}
               <ContentSection
-                title="Com base no seu gosto"
-                subtitle="Novas recomendações a partir da sua lista e histórico"
-                items={data.personalized.recommendations}
-                showAll={false}
+                id="minha-lista"
+                title="Minha lista"
+                subtitle="Conteúdos que você salvou para assistir"
+                items={data.personalized.myList}
+                showAll={data.personalized.hasFullMyList}
+                href="/minha-lista"
+                emptyAction={{
+                  href: "/populares",
+                  label: "Explorar populares",
+                }}
               />
-              <ContentSection
-                id="populares"
-                title="Tendências"
-                subtitle="Produções em alta neste momento"
-                items={data.trending}
-                href="/populares"
-              />
-              <StreamingSection />
-              <GenreSection />
-              </>
-            )
+
+              {/* 4. Com base no seu gosto */}
+              {data.personalized.recommendations.length > 0 && (
+                <ContentSection
+                  title="Com base no seu gosto"
+                  subtitle="Novas recomendações a partir da sua lista e histórico"
+                  items={data.personalized.recommendations}
+                  showAll={false}
+                />
+              )}
+            </>
           ) : (
             <>
               <ContentSection
@@ -333,8 +239,18 @@ export default async function Home() {
                 items={data.trending}
                 href="/populares"
               />
-              <ContentSection title="Filmes populares" subtitle="Os filmes mais populares do momento" items={data.popularMovies} href="/filmes/populares" />
-              <ContentSection title="Seriados populares" subtitle="As séries mais populares do momento" items={data.popularTVShows} href="/series/populares" />
+              <ContentSection
+                title="Filmes populares"
+                subtitle="Os filmes mais populares do momento"
+                items={data.popularMovies}
+                href="/filmes/populares"
+              />
+              <ContentSection
+                title="Seriados populares"
+                subtitle="As séries mais populares do momento"
+                items={data.popularTVShows}
+                href="/series/populares"
+              />
               <StreamingSection />
               <GenreSection />
             </>

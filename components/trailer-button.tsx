@@ -1,7 +1,8 @@
 "use client";
 
-import { Play, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Play } from "lucide-react";
+import { useState } from "react";
+import { Dialog } from "@/components/interior/dialog";
 
 type TrailerButtonProps = {
   contentTitle: string;
@@ -15,24 +16,6 @@ export function TrailerButton({
   className = "detail-button",
 }: TrailerButtonProps) {
   const [open, setOpen] = useState(false);
-  const closeButton = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    closeButton.current?.focus();
-
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [open]);
 
   return (
     <>
@@ -44,46 +27,27 @@ export function TrailerButton({
         onClick={() => setOpen(true)}
         title={trailer ? "Assistir ao trailer" : "Trailer indisponível"}
       >
-        <Play size={20} /> Trailer
+        <Play size={16} /> Trailer
       </button>
 
-      {open && trailer && (
-        <div
-          className="trailer-modal-backdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setOpen(false);
-          }}
+      {trailer && (
+        <Dialog
+          open={open}
+          onOpenChange={setOpen}
+          title={trailer.name || `Trailer — ${contentTitle}`}
+          maxWidth="max-w-4xl"
         >
-          <section
-            className="trailer-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="trailer-modal-title"
-          >
-            <div className="trailer-modal-head">
-              <h2 id="trailer-modal-title">{trailer.name}</h2>
-              <button
-                ref={closeButton}
-                className="trailer-modal-close"
-                type="button"
-                aria-label="Fechar trailer"
-                onClick={() => setOpen(false)}
-              >
-                <X aria-hidden="true" size={22} />
-              </button>
-            </div>
-            <div className="trailer-player">
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&rel=0`}
-                title={`Trailer de ${contentTitle}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
-            </div>
-          </section>
-        </div>
+          <div className="relative aspect-video w-full bg-black">
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&rel=0`}
+              title={`Trailer de ${contentTitle}`}
+              className="absolute inset-0 size-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
+          </div>
+        </Dialog>
       )}
     </>
   );

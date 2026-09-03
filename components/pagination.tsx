@@ -5,6 +5,7 @@ type PaginationProps = {
   currentPage: number;
   totalPages: number;
   query?: Record<string, string | undefined>;
+  activeTone?: "default" | "light";
 };
 
 function pageHref(
@@ -24,6 +25,7 @@ export function Pagination({
   currentPage,
   totalPages,
   query = {},
+  activeTone = "default",
 }: PaginationProps) {
   const lastPage = Math.max(1, Math.min(totalPages, 500));
   const pages = Array.from(
@@ -35,7 +37,10 @@ export function Pagination({
   ).sort((a, b) => a - b);
 
   return (
-    <nav className="catalog-pagination" aria-label="Paginação do catálogo">
+    <nav
+      className={`catalog-pagination ${activeTone === "light" ? "catalog-pagination--light" : ""}`.trim()}
+      aria-label="Paginação do catálogo"
+    >
       {currentPage > 1 ? (
         <Link
           className="page-button"

@@ -101,6 +101,7 @@ export function useTracking(
     },
     onSuccess: (item) => {
       queryClient.setQueryData(queryKey, item);
+      queryClient.invalidateQueries({ queryKey: ["auth-session"] });
     },
   });
 
@@ -152,6 +153,7 @@ export function useTracking(
     },
     onSuccess: (item) => {
       queryClient.setQueryData(queryKey, item);
+      queryClient.invalidateQueries({ queryKey: ["auth-session"] });
     },
   });
 

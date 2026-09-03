@@ -1,9 +1,15 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { UserRank } from "@/src/lib/ranking";
 
 export type SessionPayload = {
-  user: { id: string; email: string; nickname: string | null } | null;
+  user: {
+    id: string;
+    email: string;
+    nickname: string | null;
+    rank: UserRank;
+  } | null;
 };
 
 async function fetchSession(): Promise<SessionPayload> {

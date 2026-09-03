@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { BookCheck, CalendarDays, Flame, History, Home, Menu, Settings, UserRound, X } from "lucide-react";
+import { BookCheck, CalendarDays, Flame, History, Home, Menu, Search, Settings, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { useAuthSession } from "@/src/lib/auth/client";
 import { AuthNav } from "./auth/auth-nav";
@@ -41,74 +41,80 @@ function AuthenticatedDrawerLinks({ onNavigate }: { onNavigate: () => void }) {
 
 export function Header({ dashboard = false }: { dashboard?: boolean }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   return (
     <header
-      className={`site-header container ${dashboard ? "dashboard-header" : "default-header"} ${isMobileSearchOpen ? "is-mobile-search-open" : ""}`}
+      className={`site-header container ${dashboard ? "dashboard-header" : "default-header"}`}
     >
-      <Link href="/" aria-label="Trackfy — início">
+      <Link href="/" aria-label="Trackfy — início" className="header-logo-link">
         <Image
-          className="logo-mark"
-          src="/assets/logo-mark.svg"
-          width={50}
-          height={58}
-          alt=""
+          className="header-logo-full"
+          src="/assets/logo-trackfy.svg"
+          width={120}
+          height={30}
+          alt="Trackfy"
           priority
         />
       </Link>
-      <SearchInput
-        compact
-        onCompactOpenChange={(isOpen) => {
-          setIsMobileSearchOpen(isOpen);
-          if (isOpen) setIsMobileMenuOpen(false);
-        }}
-      />
-      <button
-        aria-controls="main-navigation"
-        aria-expanded={isMobileMenuOpen}
-        aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
-        className="mobile-menu-button"
-        onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
-        type="button"
-      >
-        {isMobileMenuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
-      </button>
-      {isMobileMenuOpen && (
-        <button
-          aria-label="Fechar menu"
-          className="mobile-menu-backdrop"
-          onClick={() => setIsMobileMenuOpen(false)}
-          type="button"
-        />
+      {!dashboard && (
+        <Link href="/pesquisar" className="header-search-link" aria-label="Pesquisar">
+          <Search size={18} />
+          <span>Pesquisar...</span>
+        </Link>
       )}
-      <nav
-        className={`header-nav ${isMobileMenuOpen ? "is-open" : ""}`}
-        id="main-navigation"
-        aria-label="Navegação principal"
-      >
-        <button
-          aria-label="Fechar menu"
-          className="drawer-close-button"
-          onClick={() => setIsMobileMenuOpen(false)}
-          type="button"
-        >
-          <X aria-hidden="true" size={22} />
-        </button>
-        <Link className="nav-link drawer-home-link" href="/" onClick={() => setIsMobileMenuOpen(false)}>
-          <Home aria-hidden="true" className="drawer-nav-icon" size={18} />
-          Início
-        </Link>
-        <AuthenticatedDrawerLinks onNavigate={() => setIsMobileMenuOpen(false)} />
-        <AuthNav drawer />
-        <Link className="nav-link nav-popular" href="/populares" onClick={() => setIsMobileMenuOpen(false)}>
-          <Flame aria-hidden="true" className="drawer-nav-icon" size={18} />
-          Populares
-        </Link>
-      </nav>
-      <div className="header-desktop-auth">
-        <AuthNav />
-      </div>
+      {!dashboard && (
+        <>
+          <button
+            aria-controls="main-navigation"
+            aria-expanded={isMobileMenuOpen}
+            aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+            className="mobile-menu-button"
+            onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+            type="button"
+          >
+            {isMobileMenuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+          </button>
+          {isMobileMenuOpen && (
+            <button
+              aria-label="Fechar menu"
+              className="mobile-menu-backdrop"
+              onClick={() => setIsMobileMenuOpen(false)}
+              type="button"
+            />
+          )}
+          <nav
+            className={`header-nav ${isMobileMenuOpen ? "is-open" : ""}`}
+            id="main-navigation"
+            aria-label="Navegação principal"
+          >
+            <button
+              aria-label="Fechar menu"
+              className="drawer-close-button"
+              onClick={() => setIsMobileMenuOpen(false)}
+              type="button"
+            >
+              <X aria-hidden="true" size={22} />
+            </button>
+            <Link className="nav-link drawer-home-link" href="/" onClick={() => setIsMobileMenuOpen(false)}>
+              <Home aria-hidden="true" className="drawer-nav-icon" size={18} />
+              Início
+            </Link>
+            <Link className="nav-link" href="/pesquisar" onClick={() => setIsMobileMenuOpen(false)}>
+              <Search aria-hidden="true" className="drawer-nav-icon" size={18} />
+              Pesquisar
+            </Link>
+            <AuthenticatedDrawerLinks onNavigate={() => setIsMobileMenuOpen(false)} />
+            <AuthNav drawer />
+            <Link className="nav-link nav-popular" href="/populares" onClick={() => setIsMobileMenuOpen(false)}>
+              <Flame aria-hidden="true" className="drawer-nav-icon" size={18} />
+              Populares
+            </Link>
+          </nav>
+          <div className="header-desktop-auth">
+            <AuthNav />
+          </div>
+        </>
+      )}
     </header>
   );
 }

@@ -9,10 +9,10 @@ type MyListPageProps = {
 };
 
 export default async function MyListPage({ searchParams }: MyListPageProps) {
-  const { page, filters, values } = parseCatalogSearchParams(await searchParams);
+  const { page } = parseCatalogSearchParams(await searchParams);
   const ownerId = (await cookies()).get(TRACKING_COOKIE_NAME)?.value;
   const data = isTrackingOwnerId(ownerId)
-    ? await getSavedMediaPage(ownerId, page, filters)
+    ? await getSavedMediaPage(ownerId, page, {})
     : { page: 1, results: [], totalPages: 1 };
 
   return (
@@ -22,8 +22,9 @@ export default async function MyListPage({ searchParams }: MyListPageProps) {
       items={data.results}
       currentPage={data.page}
       totalPages={data.totalPages}
-      filters={values}
-      showMediaTypeFilter
+      showFilters={false}
+      fullBlur
+      paginationActiveTone="light"
     />
   );
 }

@@ -10,6 +10,8 @@ import { findAuthUserBySessionToken } from "@/src/lib/auth/repository";
 import { getMovieDetails, getTVShowDetails } from "@/src/lib/tmdb/endpoints";
 import { mapMovie, mapTVShow } from "@/src/lib/tmdb/mappers";
 import type { MediaItem } from "@/src/lib/tmdb/types";
+import { getUserPoints } from "@/src/lib/ranking-points";
+import { getUserRank } from "@/src/lib/ranking";
 import { listTrackingEntries } from "@/src/lib/tracking/repository";
 import type { TrackingEntry } from "@/src/lib/tracking/types";
 
@@ -103,6 +105,7 @@ export default async function ProfilePage() {
     offset: 0,
   });
   const entries = tracking.items;
+  const rank = getUserRank(await getUserPoints(entries));
   const completedMovies = entries.filter(
     (entry) => entry.mediaType === "movie" && entry.watched,
   );
@@ -138,7 +141,16 @@ export default async function ProfilePage() {
           <div className="profile-identity">
             <div className="profile-avatar" aria-hidden="true">{initials}</div>
             <div className="profile-user-details">
-              <h1 id="profile-title">{displayName}</h1>
+              <div className="profile-name-row">
+                <h1 id="profile-title">{displayName}</h1>
+                <span
+                  className={`user-rank-badge rank-tone-${rank.tone}`}
+                  aria-label={`Badge atual: ${rank.name}`}
+                >
+                  <i aria-hidden="true" />
+                  {rank.name}
+                </span>
+              </div>
               <p><CalendarDays aria-hidden="true" size={14} /> Membro desde {formatJoinDate(user.createdAt)}</p>
             </div>
           </div>

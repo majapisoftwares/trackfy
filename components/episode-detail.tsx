@@ -1,18 +1,28 @@
 "use client";
 
-import { AlarmClockCheck, Check, CheckCheck, LogIn, Star } from "lucide-react";
+import {
+  AlarmClockCheck,
+  Check,
+  CheckCheck,
+  ChevronDown,
+  Eye,
+  LogIn,
+  Star,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { useTracking } from "@/src/lib/tracking/client";
 import { useAuthSession } from "@/src/lib/auth/client";
 import { episodeKey } from "@/src/lib/tracking/types";
 import type { EpisodePageData } from "@/src/lib/tmdb/episode";
-import { SeasonCarousel } from "./season-carousel";
 import { TrailerButton } from "./trailer-button";
 import { WatchProviderCard } from "./watch-provider-card";
 import { Rating } from "./rating";
+import { DropdownMenu } from "./interior/dropdown";
+import { FixedBackdrop } from "./fixed-backdrop";
 
 function releaseLabel(airDate: string | null): string {
   if (!airDate) return "Data não informada";
@@ -31,6 +41,7 @@ export function EpisodeDetail({
   episode: EpisodePageData;
   canRate?: boolean;
 }) {
+  const router = useRouter();
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const session = useAuthSession();
@@ -68,8 +79,39 @@ export function EpisodeDetail({
   const watched = watchedEpisodeKeys.has(episodeKey(currentEpisode));
   const watchLater = watchLaterEpisodeKeys.has(episodeKey(currentEpisode));
 
+  const releasedSeasonEpisodes = useMemo(
+    () => episode.episodes.filter((item) => item.voteAverage > 0),
+    [episode.episodes],
+  );
+
+  const allSeasonWatched =
+    releasedSeasonEpisodes.length > 0 &&
+    releasedSeasonEpisodes.every((item) =>
+      watchedEpisodeKeys.has(
+        episodeKey({
+          seasonNumber: episode.seasonNumber,
+          episodeNumber: item.number,
+        }),
+      ),
+    );
+
+  function toggleSeasonWatched() {
+    updateEpisodes({
+      episodes: releasedSeasonEpisodes.map((item) => ({
+        seasonNumber: episode.seasonNumber,
+        episodeNumber: item.number,
+      })),
+      watched: !allSeasonWatched,
+      target: "watched",
+    });
+  }
+
   return (
     <>
+      <FixedBackdrop
+        backdropUrl={episode.backdropUrl}
+        activeId={`episode-${episode.showId}-${episode.seasonNumber}-${episode.episodeNumber}`}
+      />
       <section
         className="episode-hero"
         style={
@@ -95,6 +137,15 @@ export function EpisodeDetail({
           </aside>
 
           <div className="episode-hero-copy">
+            <div className="episode-hero-eyebrow">
+              <span className="episode-kicker-pill">Episódio {episode.episodeNumber}</span>
+              <span className="hero-dot-divider" />
+              <span>Temporada {episode.seasonNumber}</span>
+              <span className="hero-dot-divider" />
+              <Link className="episode-show-link" href={`/series/${episode.showId}`}>
+                {episode.showTitle}
+              </Link>
+            </div>
             <h1>{episode.title}</h1>
             <div className="episode-rating-row">
               <Rating value={episode.audienceScore} />
@@ -226,13 +277,56 @@ export function EpisodeDetail({
         <section className="episode-list-section">
           <div className="episode-list-head">
             <h2>Episódios</h2>
-            <SeasonCarousel
-              seasons={episode.seasons}
-              activeSeason={episode.seasonNumber}
-              getHref={(season) =>
-                `/series/${episode.showId}/season/${season.number}/episode/1`
-              }
-            />
+            <div className="episodes-toolbar">
+              {isAuthenticated ? (
+                <button
+                  className={`episode-toolbar-btn ${allSeasonWatched ? "is-active" : ""}`}
+                  type="button"
+                  onClick={toggleSeasonWatched}
+                  title={
+                    allSeasonWatched
+                      ? "Desmarcar temporada"
+                      : "Marcar temporada como assistida"
+                  }
+                >
+                  <Eye size={15} />
+                  <span>
+                    {allSeasonWatched ? "Assistido" : "Marcar como assistido"}
+                  </span>
+                </button>
+              ) : (
+                <Link
+                  className="episode-toolbar-btn"
+                  href="/login"
+                  title="Entrar para acompanhar"
+                >
+                  <Eye size={15} />
+                  <span>Marcar como assistido</span>
+                </Link>
+              )}
+
+              <DropdownMenu
+                items={episode.seasons.map((item) => ({
+                  value: String(item.number),
+                  label: `Temporada ${item.number}`,
+                  active: item.number === episode.seasonNumber,
+                  onClick: () => {
+                    router.push(
+                      `/series/${episode.showId}/season/${item.number}/episode/1`,
+                    );
+                  },
+                }))}
+                side="bottom"
+                align="right"
+                label="Selecionar temporada"
+                trigger={
+                  <span className="episode-toolbar-btn episode-season-select">
+                    <span>Temporada {episode.seasonNumber}</span>
+                    <ChevronDown size={15} />
+                  </span>
+                }
+              />
+            </div>
           </div>
           <div className="episode-page-grid">
             {episode.episodes.map((item) => {

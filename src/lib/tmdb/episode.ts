@@ -22,10 +22,13 @@ export type EpisodePageData = {
   overview: string;
   posterUrl: string;
   backdropUrl: string;
+  stillUrl?: string | null;
   seasonNumber: number;
   episodeNumber: number;
   voteAverage: number;
   audienceScore: number;
+  airDate?: string | null;
+  runtime?: number | null;
   trailer: { key: string; name: string } | null;
   watchAvailability: WatchAvailability | null;
   metadata: {
@@ -118,10 +121,13 @@ export async function getEpisodePageData(
     posterUrl: getTMDBImageUrl(show.poster_path, "w500") ?? POSTER_FALLBACK,
     backdropUrl:
       getTMDBImageUrl(show.backdrop_path, "original") ?? BACKDROP_FALLBACK,
+    stillUrl: getTMDBImageUrl(episode.still_path, "w780") ?? EPISODE_FALLBACK,
     seasonNumber,
     episodeNumber,
     voteAverage: episode.vote_average ?? 0,
     audienceScore: episode.vote_average ?? 0,
+    airDate: episode.air_date,
+    runtime: episode.runtime ?? null,
     trailer:
       selectTrailer(episode.videos?.results) ??
       selectTrailer(show.videos?.results),

@@ -1,7 +1,10 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, ChevronRight } from "lucide-react";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
+import { useEpisodeDrawer } from "@/components/episode-drawer-context";
 
 export type UpcomingEpisodeItem = {
   seriesId: number;
@@ -25,10 +28,17 @@ function releaseLabel(airDate: string): string {
 
 export function UpcomingEpisodesSection({
   items,
+  maxItems,
+  showAll = false,
 }: {
   items: UpcomingEpisodeItem[];
+  maxItems?: number;
+  showAll?: boolean;
 }) {
+  const { openEpisodeDrawer } = useEpisodeDrawer();
+
   if (items.length === 0) return null;
+  const displayedItems = maxItems ? items.slice(0, maxItems) : items;
 
   return (
     <section className="content-section container" id="proximos-episodios">
@@ -39,19 +49,39 @@ export function UpcomingEpisodesSection({
             Acompanhe os próximos lançamentos das séries que você assiste
           </p>
         </div>
+        {showAll && maxItems && items.length > maxItems && (
+          <Link className="section-link" href="/episodios-para-assistir">
+            Ver todos <ChevronRight aria-hidden="true" size={20} />
+          </Link>
+        )}
       </div>
       <div className="continue-row">
-        {items.map((item) => {
+        {displayedItems.map((item) => {
           const imageUrl =
             getTMDBImageUrl(item.stillPath, "w780") ?? item.posterUrl;
-          const href = `/series/${item.seriesId}/season/${item.seasonNumber}/episode/${item.episodeNumber}`;
 
           return (
             <article
               className="continue-card"
               key={`${item.seriesId}-${item.seasonNumber}-${item.episodeNumber}`}
             >
-              <Link className="continue-card-link" href={href}>
+              <button
+                type="button"
+                className="continue-card-link w-full text-left bg-transparent border-0 p-0 cursor-pointer"
+                onClick={() =>
+                  openEpisodeDrawer({
+                    showId: item.seriesId,
+                    seasonNumber: item.seasonNumber,
+                    episodeNumber: item.episodeNumber,
+                    initialData: {
+                      title: item.episodeTitle,
+                      showTitle: item.seriesTitle,
+                      imageUrl: imageUrl,
+                      airDate: item.airDate,
+                    },
+                  })
+                }
+              >
                 {imageUrl ? (
                   <Image
                     src={imageUrl}
@@ -73,7 +103,7 @@ export function UpcomingEpisodesSection({
                     {item.seriesTitle} · T{item.seasonNumber} E{item.episodeNumber}
                   </span>
                 </span>
-              </Link>
+              </button>
             </article>
           );
         })}

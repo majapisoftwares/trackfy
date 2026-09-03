@@ -11,7 +11,7 @@ type AuthMode = "login" | "register";
 
 type AuthErrorResponse = {
   error?: string;
-  user?: NonNullable<SessionPayload["user"]>;
+  user?: Pick<NonNullable<SessionPayload["user"]>, "id" | "email" | "nickname">;
 };
 
 export function AuthForm({ mode }: { mode: AuthMode }) {
@@ -49,16 +49,9 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         return;
       }
 
-      // A sessão acaba de ser criada no cookie, mas a consulta em memória pode
-      // ainda guardar o estado anônimo. Atualizá-la evita que a interface só
-      // reconheça a conta após um recarregamento manual.
-      if (payload.user) {
-        queryClient.setQueryData<SessionPayload>(["auth-session"], {
-          user: payload.user,
-        });
-      } else {
-        await queryClient.invalidateQueries({ queryKey: ["auth-session"] });
-      }
+      // A sessão acaba de ser criada no cookie. Reconsultá-la também carrega
+      // o badge calculado para a conta antes de renderizar o dashboard.
+      await queryClient.invalidateQueries({ queryKey: ["auth-session"] });
       queryClient.removeQueries({ queryKey: ["tracking"] });
 
       router.replace("/");

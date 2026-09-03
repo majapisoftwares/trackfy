@@ -30,15 +30,9 @@ const PERSON_FALLBACK = "/assets/logo-mark.svg";
 const EPISODE_FALLBACK = "/assets/episode-upcoming.png";
 
 function translateStatus(status: string): string {
-  const statuses: Record<string, string> = {
-    "Returning Series": "Em andamento",
-    Ended: "Finalizada",
-    Released: "Lançado",
-    "In Production": "Em produção",
-    Planned: "Planejado",
-    Canceled: "Cancelado",
-  };
-  return statuses[status] ?? (status || "Status indisponível");
+  if (status === "Canceled") return "Cancelado";
+  if (status === "Ended" || status === "Released") return "Finalizado";
+  return "Lançando";
 }
 
 function formatDate(date: string | undefined): string {

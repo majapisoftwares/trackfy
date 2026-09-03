@@ -1,6 +1,7 @@
 "use client";
 
 import { Upload } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChangeEvent, useRef, useState } from "react";
 
 type ImportSummary = {
@@ -11,6 +12,7 @@ type ImportSummary = {
 };
 
 export function TraktImportButton() {
+  const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
@@ -46,6 +48,7 @@ export function TraktImportButton() {
       const result = (await response.json()) as ImportSummary & { error?: string };
       if (!response.ok) throw new Error(result.error || "Não foi possível importar o arquivo.");
       setSummary(result);
+      await queryClient.invalidateQueries({ queryKey: ["auth-session"] });
     } catch (requestError) {
       setError(
         requestError instanceof Error

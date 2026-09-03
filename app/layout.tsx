@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { QueryProvider } from "@/components/query-provider";
+import { EpisodeDrawerProvider } from "@/components/episode-drawer-context";
 import "./globals.css";
 
 const geist = Geist({
@@ -38,7 +39,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <body className={`${geist.variable} dark-scrollbar bg-background text-foreground`}>
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <EpisodeDrawerProvider>
+            {children}
+          </EpisodeDrawerProvider>
+        </QueryProvider>
       </body>
     </html>
   );
