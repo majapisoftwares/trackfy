@@ -4564,7 +4564,7 @@ a {
   min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%), rgba(14, 14, 18, 0.52);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%), rgba(8, 8, 12, 0.68);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   padding: 6px 20px 14px;
@@ -7724,7 +7724,7 @@ a {
     flex: none;
     margin: 20px 11px 0;
     border-radius: 14px;
-    background: rgba(17, 17, 21, 0.72);
+    background: rgba(8, 8, 12, 0.84);
     padding: 10px 18px 12px;
   }
 

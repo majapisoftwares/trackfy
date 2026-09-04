@@ -442,7 +442,7 @@ export function ContentDetail({
                   </>
                 ) : (
                   <Link
-                    className="flex items-center gap-1.5 rounded-full bg-white text-stone-950 font-semibold text-sm px-4 py-2.5 hover:bg-stone-200 transition-colors shadow-sm shrink-0"
+                    className="detail-button primary shrink-0"
                     href="/login"
                   >
                     <LogIn size={16} />
