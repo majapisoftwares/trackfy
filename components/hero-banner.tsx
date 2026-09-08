@@ -11,6 +11,7 @@ import { useTracking } from "@/src/lib/tracking/client";
 import { useAuthSession } from "@/src/lib/auth/client";
 import { FixedBackdrop } from "@/components/fixed-backdrop";
 import type { MediaItem } from "@/src/lib/tmdb/types";
+import { CustomListPicker } from "./custom-list-picker";
 
 const TMDB_GENRES: Record<number, string> = {
   28: "Ação",
@@ -75,16 +76,19 @@ function HeroSlideAction({ item }: { item: MediaItem }) {
 
   const inList = entry?.inList ?? false;
   const href = mediaType === "movie" ? `/movie/${item.id}` : `/series/${item.id}`;
+  const [listPickerOpen, setListPickerOpen] = useState(false);
 
   function handleListToggle() {
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
-    update({ inList: !inList });
+    if (inList) update({ inList: false });
+    else setListPickerOpen(true);
   }
 
   return (
+    <>
     <div className="hero-actions">
       <button
         type="button"
@@ -116,6 +120,8 @@ function HeroSlideAction({ item }: { item: MediaItem }) {
         <span className="hero-secondary-text">Mais informações</span>
       </Link>
     </div>
+    <CustomListPicker open={listPickerOpen} onOpenChange={setListPickerOpen} mediaType={mediaType} mediaId={item.id} title={item.title} posterUrl={posterUrl} onDefaultSave={() => update({ inList: true })} />
+    </>
   );
 }
 
@@ -272,6 +278,26 @@ export function HeroBanner({
           </motion.div>
         </AnimatePresence>
       </section>
+
+      {allItems.length > 1 && (
+        <nav className="hero-slider-nav" aria-label="Selecionar destaque">
+          <div className="hero-slider-dots" role="tablist" aria-label="Destaques disponíveis">
+            {allItems.map((slide, index) => (
+              <button
+                key={`${slide.id}-${index}`}
+                type="button"
+                className={`hero-slider-dot ${index === activeIndex ? "is-active" : ""}`}
+                role="tab"
+                aria-selected={index === activeIndex}
+                aria-label={`Exibir destaque ${index + 1}`}
+                onClick={() => setActiveIndex(index)}
+                onFocus={() => setIsPaused(true)}
+                onBlur={() => setIsPaused(false)}
+              />
+            ))}
+          </div>
+        </nav>
+      )}
       </div>
     </>
   );

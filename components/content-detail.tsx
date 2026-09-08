@@ -28,6 +28,7 @@ import { CommunityRating } from "./community-rating";
 import { DropdownMenu } from "./interior/dropdown";
 import { FixedBackdrop } from "./fixed-backdrop";
 import { useEpisodeDrawer } from "@/components/episode-drawer-context";
+import { CustomListPicker } from "./custom-list-picker";
 
 function EpisodeCard({
   showId,
@@ -127,6 +128,7 @@ export function ContentDetail({
   const [expanded, setExpanded] = useState(false);
   const [season, setSeason] = useState(content.seasons[0]?.number ?? 1);
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [listPickerOpen, setListPickerOpen] = useState(false);
   const searchParams = useSearchParams();
   const { openEpisodeDrawer } = useEpisodeDrawer();
   const session = useAuthSession();
@@ -433,7 +435,10 @@ export function ContentDetail({
                     </button>
                     <button
                       className="flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.06] backdrop-blur-md text-stone-200 hover:text-white hover:bg-white/[0.12] hover:border-white/[0.22] text-sm font-medium px-4 py-2.5 transition-all shrink-0"
-                      onClick={() => update({ inList: !inList })}
+                      onClick={() => {
+                        if (inList) update({ inList: false });
+                        else setListPickerOpen(true);
+                      }}
                       type="button"
                     >
                       {inList ? <X size={16} /> : <Plus size={16} />}
@@ -450,6 +455,16 @@ export function ContentDetail({
                   </Link>
                 )}
               </div>
+
+              <CustomListPicker
+                open={listPickerOpen}
+                onOpenChange={setListPickerOpen}
+                mediaType={content.mediaType}
+                mediaId={content.id}
+                title={content.title}
+                posterUrl={content.posterUrl}
+                onDefaultSave={() => update({ inList: true })}
+              />
 
               <div className="detail-secondary-actions">
                 {canArchive && (

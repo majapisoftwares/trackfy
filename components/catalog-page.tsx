@@ -23,6 +23,7 @@ type CatalogPageProps = {
   showQuickActions?: boolean;
   tabs?: Array<{ label: string; href: string; active: boolean }>;
   aboveGrid?: ReactNode;
+  content?: ReactNode;
   infiniteScroll?: boolean;
   apiEndpoint?: string;
   fullBlur?: boolean;
@@ -42,6 +43,7 @@ export function CatalogPage({
   showQuickActions = false,
   tabs,
   aboveGrid,
+  content,
   infiniteScroll = false,
   apiEndpoint,
   fullBlur = false,
@@ -109,7 +111,7 @@ export function CatalogPage({
 
             {aboveGrid}
 
-            {infiniteScroll ? (
+            {content ?? (infiniteScroll ? (
               <InfiniteCatalogGrid
                 key={infiniteKey}
                 initialItems={items}
@@ -144,7 +146,7 @@ export function CatalogPage({
                   activeTone={paginationActiveTone}
                 />
               </>
-            )}
+            ))}
           </section>
         </div>
       </DashboardShell>

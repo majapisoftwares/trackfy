@@ -140,9 +140,6 @@ export function useTracking(
 
       queryClient.setQueryData<TrackingEntry>(queryKey, {
         ...current,
-        ...(patch.target === "watched" && patch.watched
-          ? { inList: true }
-          : {}),
         [field]: [...episodes.values()],
         updatedAt: new Date().toISOString(),
       });

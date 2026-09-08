@@ -17,8 +17,13 @@ import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
 import { useTracking } from "@/src/lib/tracking/client";
 import type { MediaItem } from "@/src/lib/tmdb/types";
 import { DropdownMenu, type DropdownMenuItem } from "./interior/dropdown";
+import { CustomListPicker } from "./custom-list-picker";
 
 function getContentHref(item: MediaItem) {
+  if (item.source === "jikan" && item.id === 5114) {
+    return "/animes/fullmetal-alchemist-brotherhood";
+  }
+  if (item.externalUrl) return item.externalUrl;
   return item.mediaType === "movie" ? `/movie/${item.id}` : `/series/${item.id}`;
 }
 
@@ -34,6 +39,7 @@ function MediaCardDropdown({
   const router = useRouter();
   const session = useAuthSession();
   const isLogged = Boolean(session.data?.user);
+  const [listPickerOpen, setListPickerOpen] = useState(false);
 
   const { entry, update } = useTracking(item.mediaType, item.id, {
     title: item.title,
@@ -58,7 +64,8 @@ function MediaCardDropdown({
           router.push("/login");
           return;
         }
-        update({ inList: !inList });
+        if (inList) update({ inList: false });
+        else setListPickerOpen(true);
       },
     },
     {
@@ -88,19 +95,10 @@ function MediaCardDropdown({
     },
   ];
 
-  return (
-    <DropdownMenu
-      items={menuItems}
-      side="top"
-      align="right"
-      label={`Opções de ${item.title}`}
-      trigger={
-        <span className="media-card-menu-trigger" aria-hidden="true">
-          <MoreVertical size={15} />
-        </span>
-      }
-    />
-  );
+  return <>
+    <DropdownMenu items={menuItems} side="top" align="right" label={`Opções de ${item.title}`} trigger={<span className="media-card-menu-trigger" aria-hidden="true"><MoreVertical size={15} /></span>} />
+    <CustomListPicker open={listPickerOpen} onOpenChange={setListPickerOpen} mediaType={item.mediaType} mediaId={item.id} title={item.title} posterUrl={posterUrl} onDefaultSave={() => update({ inList: true })} />
+  </>;
 }
 
 export function MediaCard({
@@ -110,20 +108,32 @@ export function MediaCard({
   showQuickActions?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  const posterUrl = getTMDBImageUrl(item.posterPath, "w500");
+  const posterUrl = item.posterUrl ?? getTMDBImageUrl(item.posterPath, "w500");
   const href = getContentHref(item);
-  const typeLabel = item.mediaType === "movie" ? "Filme" : "Série";
+  const typeLabel = item.source === "jikan" ? "Anime" : item.mediaType === "movie" ? "Filme" : "Série";
+  const isExternal = Boolean(item.externalUrl);
 
   return (
     <article className="media-card" data-ranking-position={item.rankingPosition}>
       <Link
         className="media-card-link"
         href={href}
+        target={isExternal ? "_blank" : undefined}
+        rel={isExternal ? "noreferrer" : undefined}
         aria-label={`Ver detalhes de ${item.title}`}
       >
         <div className="poster-frame">
           {failed || !posterUrl ? (
             <span className="poster-fallback">Imagem indisponível</span>
+          ) : isExternal ? (
+            // Jikan posters are loaded in the browser so this catalogue does
+            // not depend on the server's outbound network configuration.
+            <img
+              className="poster-image"
+              src={posterUrl}
+              alt={`Pôster de ${item.title}`}
+              onError={() => setFailed(true)}
+            />
           ) : (
             <Image
               className="poster-image"
@@ -141,12 +151,16 @@ export function MediaCard({
           <div className="media-title-row">
             <Link
               href={href}
+              target={isExternal ? "_blank" : undefined}
+              rel={isExternal ? "noreferrer" : undefined}
               className="media-title-link"
               title={item.title}
             >
               <h3 className="media-title">{item.title}</h3>
             </Link>
-            <MediaCardDropdown item={item} posterUrl={posterUrl} href={href} />
+            {!isExternal && (
+              <MediaCardDropdown item={item} posterUrl={posterUrl} href={href} />
+            )}
           </div>
           <p className="media-year">
             {item.year ?? "Data indisponível"} · {typeLabel}

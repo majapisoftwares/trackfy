@@ -3,6 +3,9 @@ export type MediaType = "movie" | "tv";
 export type MediaItem = {
   id: number;
   mediaType: MediaType;
+  source?: "tmdb" | "jikan";
+  externalUrl?: string;
+  posterUrl?: string | null;
   adult: boolean;
   title: string;
   originalTitle?: string;

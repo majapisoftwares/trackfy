@@ -349,9 +349,6 @@ export async function updateTrackedEpisodes(
         title: patch.title,
         posterUrl: patch.posterUrl ?? current.posterUrl,
         [field]: nextEpisodes,
-        ...(patch.target === "watched" && patch.watched
-          ? { inList: true }
-          : {}),
         updatedAt: new Date(),
       },
     },
