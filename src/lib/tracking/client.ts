@@ -8,6 +8,7 @@ import type {
   TrackingMediaType,
 } from "./types";
 import { episodeKey } from "./types";
+import type { ContinueWatchingItem } from "./continue-watching";
 
 type TrackingMetadata = {
   title: string;
@@ -17,6 +18,10 @@ type TrackingMetadata = {
 type ApiPayload = {
   item: TrackingEntry | null;
   error?: string;
+};
+
+type EpisodeApiPayload = ApiPayload & {
+  nextEpisode?: ContinueWatchingItem | null;
 };
 
 async function readPayload(response: Response): Promise<ApiPayload> {
@@ -115,7 +120,7 @@ export function useTracking(
         credentials: "same-origin",
         body: JSON.stringify({ ...metadata, ...patch }),
       });
-      return (await readPayload(response)).item;
+      return (await readPayload(response)) as EpisodeApiPayload;
     },
     onMutate: async (patch) => {
       await queryClient.cancelQueries({ queryKey });
@@ -148,8 +153,8 @@ export function useTracking(
     onError: (_error, _patch, context) => {
       queryClient.setQueryData(queryKey, context?.previous ?? null);
     },
-    onSuccess: (item) => {
-      queryClient.setQueryData(queryKey, item);
+    onSuccess: (payload) => {
+      queryClient.setQueryData(queryKey, payload.item);
       queryClient.invalidateQueries({ queryKey: ["auth-session"] });
     },
   });
@@ -161,5 +166,6 @@ export function useTracking(
     update: updateMutation.mutate,
     updateAsync: updateMutation.mutateAsync,
     updateEpisodes: episodeMutation.mutate,
+    updateEpisodesAsync: episodeMutation.mutateAsync,
   };
 }

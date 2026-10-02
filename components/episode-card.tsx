@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTracking } from "@/src/lib/tracking/client";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
 import { useEpisodeDrawer } from "@/components/episode-drawer-context";
+import type { ContinueWatchingItem } from "@/src/lib/tracking/continue-watching";
 
 export type EpisodeCardProps = {
   seriesId: number;
@@ -18,6 +19,7 @@ export type EpisodeCardProps = {
   stillPath?: string | null;
   isWatched?: boolean;
   variant?: "continue" | "history";
+  onEpisodeCompleted?: (nextEpisode: ContinueWatchingItem | null) => void;
 };
 
 export function EpisodeCard({
@@ -30,9 +32,11 @@ export function EpisodeCard({
   stillPath: rawStillPath,
   isWatched = false,
   variant = "continue",
+  onEpisodeCompleted,
 }: EpisodeCardProps) {
   const isHorizontal = variant === "continue";
   const [showMenu, setShowMenu] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { openEpisodeDrawer } = useEpisodeDrawer();
@@ -128,7 +132,7 @@ export function EpisodeCard({
 
   const seriesHref = `/series/${seriesId}`;
 
-  const { entry, updateEpisodes } = useTracking("tv", seriesId, {
+  const { entry, updateEpisodesAsync } = useTracking("tv", seriesId, {
     title: seriesTitle,
     posterUrl: posterUrl ?? undefined,
   });
@@ -142,14 +146,25 @@ export function EpisodeCard({
       ),
     );
 
-  const handleToggleWatched = (e: React.MouseEvent) => {
+  const handleToggleWatched = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    updateEpisodes({
-      episodes: [{ seasonNumber, episodeNumber }],
-      watched: !isActuallyWatched,
-      target: "watched",
-    });
+    const nextWatched = !isActuallyWatched;
+
+    if (variant === "continue" && nextWatched) setIsCompleting(true);
+
+    try {
+      const result = await updateEpisodesAsync({
+        episodes: [{ seasonNumber, episodeNumber }],
+        watched: nextWatched,
+        target: "watched",
+      });
+      if (variant === "continue" && nextWatched) {
+        onEpisodeCompleted?.(result.nextEpisode ?? null);
+      }
+    } catch {
+      setIsCompleting(false);
+    }
   };
 
   const handleOpenDrawer = (e: React.MouseEvent) => {
@@ -169,6 +184,8 @@ export function EpisodeCard({
   return (
     <article
       className={`trakt-card ${isHorizontal ? "trakt-card--horizontal" : ""} ${
+        isCompleting ? "is-completing" : ""
+      } ${
         showMenu ? "is-menu-open" : ""
       }`}
       key={`${seriesId}-${seasonNumber}-${episodeNumber}`}
@@ -251,7 +268,7 @@ export function EpisodeCard({
                   type="button"
                   className="trakt-menu-item"
                   onClick={(e) => {
-                    handleToggleWatched(e);
+                    void handleToggleWatched(e);
                     setShowMenu(false);
                   }}
                 >
@@ -302,7 +319,7 @@ export function EpisodeCard({
               ? `Desmarcar T${seasonNumber} E${episodeNumber} como assistido`
               : `Marcar T${seasonNumber} E${episodeNumber} como assistido`
           }
-          onClick={handleToggleWatched}
+          onClick={(e) => void handleToggleWatched(e)}
         >
           {isActuallyWatched ? (
             <Check size={16} strokeWidth={2.8} />

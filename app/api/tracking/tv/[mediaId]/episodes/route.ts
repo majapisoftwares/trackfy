@@ -3,6 +3,7 @@ import { apiError, jsonNoStore } from "@/src/lib/server/api-response";
 import { requireSameOrigin } from "@/src/lib/server/csrf";
 import { logger } from "@/src/lib/server/logger";
 import { updateTrackedEpisodes } from "@/src/lib/tracking/repository";
+import { getContinueWatchingItem } from "@/src/lib/tracking/continue-watching";
 import {
   attachTrackingSession,
   getTrackingSession,
@@ -14,6 +15,21 @@ export const runtime = "nodejs";
 type RouteContext = {
   params: Promise<{ mediaId: string }>;
 };
+
+function isReleased(airDate: string | null | undefined): boolean {
+  if (!airDate) return false;
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value;
+  const today = `${value("year")}-${value("month")}-${value("day")}`;
+  return airDate <= today;
+}
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const originError = requireSameOrigin(request);
@@ -50,7 +66,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       mediaId,
       patch,
     );
-    return attachTrackingSession(jsonNoStore({ item }), session);
+    // Return only the replacement card the client needs instead of making it
+    // refresh the entire personalized home page after every episode update.
+    const candidate = patch.watched && patch.target === "watched"
+      ? await getContinueWatchingItem(item)
+      : null;
+    const nextEpisode = candidate && isReleased(candidate.airDate)
+      ? candidate
+      : null;
+    return attachTrackingSession(jsonNoStore({ item, nextEpisode }), session);
   } catch (error) {
     logger.error(error, "EPISODE_TRACKING_UPDATE_ERROR");
     return apiError(

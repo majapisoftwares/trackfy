@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 import type { ContinueWatchingItem } from "@/src/lib/tracking/continue-watching";
 import { EpisodeCard } from "./episode-card";
 
@@ -18,7 +21,29 @@ export function ContinueWatchingSection({
   href?: string;
   showAll?: boolean;
 }) {
-  if (items.length === 0) return null;
+  const [visibleItems, setVisibleItems] = useState(items);
+
+  if (visibleItems.length === 0) return null;
+
+  const replaceCompletedEpisode = (
+    completed: ContinueWatchingItem,
+    nextEpisode: ContinueWatchingItem | null,
+  ) => {
+    setVisibleItems((current) => {
+      const index = current.findIndex(
+        (item) =>
+          item.seriesId === completed.seriesId &&
+          item.seasonNumber === completed.seasonNumber &&
+          item.episodeNumber === completed.episodeNumber,
+      );
+      if (index < 0) return current;
+
+      const remaining = current.filter((_, itemIndex) => itemIndex !== index);
+      return nextEpisode
+        ? [...remaining.slice(0, index), nextEpisode, ...remaining.slice(index)]
+        : remaining;
+    });
+  };
 
   return (
     <section className="content-section container" id="continuar-assistindo">
@@ -31,7 +56,7 @@ export function ContinueWatchingSection({
           </h2>
           <p className="section-subtitle">{subtitle}</p>
         </div>
-        {showAll && items.length > 0 && (
+        {showAll && visibleItems.length > 0 && (
           <Link className="section-link" href={href}>
             Ver todos <ChevronRight aria-hidden="true" size={20} />
           </Link>
@@ -39,7 +64,7 @@ export function ContinueWatchingSection({
       </div>
 
       <div className="trakt-row trakt-row--horizontal">
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <EpisodeCard
             key={`continue-${item.seriesId}-${item.seasonNumber}-${item.episodeNumber}`}
             seriesId={item.seriesId}
@@ -51,6 +76,9 @@ export function ContinueWatchingSection({
             stillPath={item.stillPath}
             isWatched={false}
             variant="continue"
+            onEpisodeCompleted={(nextEpisode) =>
+              replaceCompletedEpisode(item, nextEpisode)
+            }
           />
         ))}
       </div>
