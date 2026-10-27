@@ -35,7 +35,7 @@ function toSavedMedia(
     popularity: details.popularity ?? 0,
     genreIds: details.genres.map((genre) => genre.id),
     originalLanguage: details.original_language,
-    savedAt: entry.updatedAt,
+    savedAt: entry.addedToListAt ?? entry.updatedAt,
   };
 }
 
@@ -56,10 +56,15 @@ function matchesFilters(item: SavedMedia, filters: CatalogFilters): boolean {
   );
 }
 
-function sortSavedMedia(items: SavedMedia[], sort: string | undefined): SavedMedia[] {
+function sortSavedMedia(
+  items: SavedMedia[],
+  sort: string | undefined,
+  defaultSort: "popularity" | "savedAt",
+): SavedMedia[] {
   return [...items].sort((left, right) => {
     if (sort === "vote_average.desc") return right.voteAverage - left.voteAverage;
     if (sort === "date.desc") return (right.releaseDate ?? "").localeCompare(left.releaseDate ?? "");
+    if (defaultSort === "savedAt") return right.savedAt.localeCompare(left.savedAt);
     return right.popularity - left.popularity || right.savedAt.localeCompare(left.savedAt);
   });
 }
@@ -68,6 +73,7 @@ async function getTrackedMediaPage(
   tracked: Awaited<ReturnType<typeof listTrackingEntries>>,
   page: number,
   filters: CatalogFilters,
+  defaultSort: "popularity" | "savedAt",
 ): Promise<{ page: number; results: MediaItem[]; totalPages: number }> {
   const resolved = await Promise.all(
     tracked.items.map(async (entry) => {
@@ -84,6 +90,7 @@ async function getTrackedMediaPage(
   const items = sortSavedMedia(
     resolved.filter((item): item is SavedMedia => item !== null).filter((item) => matchesFilters(item, filters)),
     filters.sort,
+    defaultSort,
   );
   const pageSize = 20;
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
@@ -105,8 +112,9 @@ export async function getSavedMediaPage(
     inList: true,
     limit: 1_000,
     offset: 0,
+    sortBy: "addedToListAt",
   });
-  return getTrackedMediaPage(tracked, page, filters);
+  return getTrackedMediaPage(tracked, page, filters, "savedAt");
 }
 
 export async function getArchivedMediaPage(
@@ -118,5 +126,5 @@ export async function getArchivedMediaPage(
     limit: 1_000,
     offset: 0,
   });
-  return getTrackedMediaPage(tracked, page, filters);
+  return getTrackedMediaPage(tracked, page, filters, "popularity");
 }

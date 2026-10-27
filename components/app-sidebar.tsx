@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Clapperboard,
   Flame,
+  Gamepad2,
   History,
   House,
   LogOut,
@@ -27,7 +28,8 @@ import { type SessionPayload, useAuthSession } from "@/src/lib/auth/client";
 import { getUserRank } from "@/src/lib/ranking";
 
 const navItems = [
-  { href: "/", label: "Início", icon: House },
+  { href: "/", label: "Filmes/Séries", icon: Clapperboard },
+  { href: "/games", label: "Games", icon: Gamepad2 },
   { href: "/pesquisar", label: "Pesquisar", icon: Search },
   { href: "/populares", label: "Populares", icon: Flame },
   { href: "/minha-lista", label: "Minha lista", icon: Bookmark },
@@ -442,6 +444,17 @@ export function AppSidebar() {
         </Link>
 
         {/* Tab 4: Minha Lista */}
+        <Link
+          href="/games"
+          className={`mobile-tab-btn ${isActive("/games") ? "active" : ""}`}
+          aria-current={isActive("/games") ? "page" : undefined}
+          title="Games"
+          aria-label="Games"
+        >
+          <span className="mobile-tab-icon-wrap"><Gamepad2 size={21} strokeWidth={2} /></span>
+        </Link>
+
+        {/* Tab 5: Minha Lista */}
         {isAuthenticated && (
           <Link
             href="/minha-lista"

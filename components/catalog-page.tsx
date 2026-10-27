@@ -19,9 +19,12 @@ type CatalogPageProps = {
   filters?: Record<string, string | undefined>;
   showFilters?: boolean;
   showMediaTypeFilter?: boolean;
+  showStreamingFilter?: boolean;
   showAdvancedFilters?: boolean;
   showQuickActions?: boolean;
   tabs?: Array<{ label: string; href: string; active: boolean }>;
+  tabAction?: ReactNode;
+  headerAction?: ReactNode;
   aboveGrid?: ReactNode;
   content?: ReactNode;
   infiniteScroll?: boolean;
@@ -39,9 +42,12 @@ export function CatalogPage({
   filters = {},
   showFilters = true,
   showMediaTypeFilter = false,
+  showStreamingFilter = false,
   showAdvancedFilters = true,
   showQuickActions = false,
   tabs,
+  tabAction,
+  headerAction,
   aboveGrid,
   content,
   infiniteScroll = false,
@@ -49,7 +55,7 @@ export function CatalogPage({
   fullBlur = false,
   paginationActiveTone = "default",
 }: CatalogPageProps) {
-  const infiniteKey = `${filters.mediaType ?? ""}-${filters.genre ?? ""}-${filters.sort ?? ""}-${currentPage}`;
+  const infiniteKey = `${filters.mediaType ?? ""}-${filters.genre ?? ""}-${filters.sort ?? ""}-${filters.streaming ?? ""}-${currentPage}`;
   const featuredBackdrop = items.find((item) => Boolean(item.backdropPath))?.backdropPath;
   const backdropUrl = featuredBackdrop ? getTMDBImageUrl(featuredBackdrop, "original") : null;
 
@@ -77,10 +83,12 @@ export function CatalogPage({
                     </Link>
                   ))}
                 </nav>
+                {tabAction}
                 {showFilters && (
                   <CatalogFilters
                     values={filters}
                     showMediaTypeFilter={showMediaTypeFilter}
+                    showStreamingFilter={showStreamingFilter}
                     showAdvancedFilters={showAdvancedFilters}
                   />
                 )}
@@ -91,10 +99,12 @@ export function CatalogPage({
                   <h1>{title}</h1>
                   {subtitle && <p>{subtitle}</p>}
                 </header>
+                {headerAction}
                 {showFilters && (
                   <CatalogFilters
                     values={filters}
                     showMediaTypeFilter={showMediaTypeFilter}
+                    showStreamingFilter={showStreamingFilter}
                     showAdvancedFilters={showAdvancedFilters}
                   />
                 )}
@@ -104,6 +114,7 @@ export function CatalogPage({
                 <CatalogFilters
                   values={filters}
                   showMediaTypeFilter={showMediaTypeFilter}
+                  showStreamingFilter={showStreamingFilter}
                   showAdvancedFilters={showAdvancedFilters}
                 />
               </div>

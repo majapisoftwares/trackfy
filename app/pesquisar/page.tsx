@@ -6,7 +6,7 @@ import { getTrendingAllPage } from "@/src/lib/tmdb/endpoints";
 
 export const metadata: Metadata = {
   title: "Pesquisar | Trackfy",
-  description: "Pesquise séries, filmes e animes no Trackfy.",
+  description: "Pesquise séries, filmes e games no Trackfy.",
 };
 
 export default async function SearchPage() {

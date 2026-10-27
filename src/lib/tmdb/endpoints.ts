@@ -231,6 +231,18 @@ const BLOCKED_CONTENT_KEYWORDS = [
 const BLOCKED_CONTENT_KEYWORD_SET = new Set(BLOCKED_CONTENT_KEYWORDS);
 const BLOCKED_CONTENT_KEYWORD_QUERY = BLOCKED_CONTENT_KEYWORDS.join("|");
 
+type TMDBFindResponse = {
+  movie_results?: TMDBMovie[];
+  tv_results?: TMDBTVShow[];
+};
+
+export type ImdbMediaMatch = {
+  id: number;
+  mediaType: MediaType;
+  title: string;
+  posterPath: string | null;
+};
+
 function isEditorialMedia(item: MediaItem): boolean {
   return !item.genreIds.some((genreId) =>
     EXCLUDED_EDITORIAL_GENRES.has(genreId),
@@ -269,6 +281,7 @@ export type CatalogFilters = {
   language?: string;
   sort?: string;
   mediaType?: MediaType;
+  streamingProviderId?: number;
 };
 
 function getCatalogQuery(
@@ -289,6 +302,11 @@ function getCatalogQuery(
         ? 50
         : undefined,
     with_original_language: filters.language,
+    with_watch_providers: filters.streamingProviderId,
+    with_watch_monetization_types: filters.streamingProviderId
+      ? "flatrate"
+      : undefined,
+    watch_region: filters.streamingProviderId ? "BR" : undefined,
     include_adult: false,
     without_keywords: BLOCKED_CONTENT_KEYWORD_QUERY,
   };
@@ -771,6 +789,31 @@ export function getTVShowDetails(tvId: number): Promise<TMDBTVShowDetails> {
     },
     revalidate: CACHE.details,
   });
+}
+
+export async function findMediaByImdbId(
+  imdbId: string,
+  preferredMediaType: MediaType | null,
+): Promise<ImdbMediaMatch | null> {
+  const data = await tmdbFetch<TMDBFindResponse>(`/find/${imdbId}`, {
+    query: { external_source: "imdb_id" },
+    revalidate: CACHE.details,
+  });
+  const movie = data.movie_results?.find((item) => item.id && item.title?.trim());
+  const tv = data.tv_results?.find((item) => item.id && item.name?.trim());
+  const match = preferredMediaType === "movie"
+    ? (movie ? { mediaType: "movie" as const, item: movie } : tv ? { mediaType: "tv" as const, item: tv } : null)
+    : preferredMediaType === "tv"
+      ? (tv ? { mediaType: "tv" as const, item: tv } : movie ? { mediaType: "movie" as const, item: movie } : null)
+      : movie ? { mediaType: "movie" as const, item: movie } : tv ? { mediaType: "tv" as const, item: tv } : null;
+
+  if (!match) return null;
+  return {
+    id: match.item.id,
+    mediaType: match.mediaType,
+    title: match.mediaType === "movie" ? match.item.title!.trim() : match.item.name!.trim(),
+    posterPath: match.item.poster_path ?? null,
+  };
 }
 
 export function getWatchProviders(

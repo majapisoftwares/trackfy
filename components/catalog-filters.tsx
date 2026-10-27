@@ -11,11 +11,13 @@ import {
   Layers,
 } from "lucide-react";
 import { Drawer } from "./interior/drawer";
+import { STREAMING_PROVIDERS } from "@/src/lib/streaming";
 
 type CatalogFiltersProps = {
   values: Record<string, string | undefined>;
   showMediaTypeFilter?: boolean;
   showAdvancedFilters?: boolean;
+  showStreamingFilter?: boolean;
 };
 
 const SORT_OPTIONS = [
@@ -46,13 +48,20 @@ const GENRES = [
   { id: "53", label: "Suspense" },
 ];
 
+const STREAMING_OPTIONS = Object.values(STREAMING_PROVIDERS).map((provider) => ({
+  id: String(provider.tmdbProviderId),
+  label: provider.name,
+}));
+
 type DrawerBodyProps = {
   initialValues: Record<string, string | undefined>;
   showMediaTypeFilter: boolean;
+  showStreamingFilter: boolean;
   onApply: (applied: {
     sort: string;
     genre: string;
     mediaType: string;
+    streaming: string;
   }) => void;
   onClose: () => void;
 };
@@ -60,16 +69,19 @@ type DrawerBodyProps = {
 function CatalogFiltersDrawerBody({
   initialValues,
   showMediaTypeFilter,
+  showStreamingFilter,
   onApply,
 }: DrawerBodyProps) {
   const [selectedSort, setSelectedSort] = useState(initialValues.sort ?? "popularity.desc");
   const [selectedGenre, setSelectedGenre] = useState(initialValues.genre ?? "");
   const [selectedMediaType, setSelectedMediaType] = useState(initialValues.mediaType ?? "");
+  const [selectedStreaming, setSelectedStreaming] = useState(initialValues.streaming ?? "");
 
   const handleReset = () => {
     setSelectedSort("popularity.desc");
     setSelectedGenre("");
     setSelectedMediaType("");
+    setSelectedStreaming("");
   };
 
   const handleApplyClick = () => {
@@ -77,12 +89,14 @@ function CatalogFiltersDrawerBody({
       sort: selectedSort,
       genre: selectedGenre,
       mediaType: selectedMediaType,
+      streaming: selectedStreaming,
     });
   };
 
   const hasActiveFilters = Boolean(
     (selectedSort && selectedSort !== "popularity.desc") ||
     Boolean(selectedGenre) ||
+    (showStreamingFilter && Boolean(selectedStreaming)) ||
     (showMediaTypeFilter && Boolean(selectedMediaType))
   );
 
@@ -164,6 +178,36 @@ function CatalogFiltersDrawerBody({
             })}
           </div>
         </section>
+
+        {showStreamingFilter && <section className="filter-section">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="filter-section-title" style={{ margin: 0 }}>Streaming</h3>
+            {selectedStreaming && (
+              <button
+                type="button"
+                onClick={() => setSelectedStreaming("")}
+                className="filter-clear-link"
+              >
+                Desmarcar
+              </button>
+            )}
+          </div>
+          <div className="filter-chips-wrap">
+            {STREAMING_OPTIONS.map(({ id, label }) => {
+              const isActive = selectedStreaming === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setSelectedStreaming(isActive ? "" : id)}
+                  className={`filter-chip ${isActive ? "active" : ""}`}
+                >
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>}
       </div>
 
       <div className="filter-drawer-footer">
@@ -193,6 +237,7 @@ function CatalogFiltersDrawerBody({
 export function CatalogFilters({
   values,
   showMediaTypeFilter = false,
+  showStreamingFilter = false,
 }: CatalogFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -204,6 +249,7 @@ export function CatalogFilters({
   const activeCount = [
     values.sort && values.sort !== "popularity.desc",
     Boolean(values.genre),
+    showStreamingFilter && Boolean(values.streaming),
     showMediaTypeFilter && Boolean(values.mediaType),
   ].filter(Boolean).length;
 
@@ -211,6 +257,7 @@ export function CatalogFilters({
     sort: string;
     genre: string;
     mediaType: string;
+    streaming: string;
   }) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -225,6 +272,12 @@ export function CatalogFilters({
       params.set("genre", applied.genre);
     } else {
       params.delete("genre");
+    }
+
+    if (showStreamingFilter && applied.streaming) {
+      params.set("streaming", applied.streaming);
+    } else {
+      params.delete("streaming");
     }
 
     if (showMediaTypeFilter) {
@@ -248,7 +301,7 @@ export function CatalogFilters({
     setOpen(false);
   };
 
-  const key = `${open}-${values.sort}-${values.genre}-${values.mediaType}`;
+  const key = `${open}-${values.sort}-${values.genre}-${values.mediaType}-${values.streaming}`;
 
   return (
     <>
@@ -277,6 +330,7 @@ export function CatalogFilters({
           key={key}
           initialValues={values}
           showMediaTypeFilter={showMediaTypeFilter}
+          showStreamingFilter={showStreamingFilter}
           onApply={handleApply}
           onClose={() => setOpen(false)}
         />

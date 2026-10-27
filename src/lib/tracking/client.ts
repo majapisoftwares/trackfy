@@ -55,6 +55,7 @@ function createOptimisticEntry(
     watchLaterEpisodes: [],
     createdAt: now,
     updatedAt: now,
+    addedToListAt: null,
   };
 }
 
@@ -90,14 +91,19 @@ export function useTracking(
       const previous = queryClient.getQueryData<TrackingEntry | null>(queryKey);
       const current =
         previous ?? createOptimisticEntry(mediaType, mediaId, metadata);
+      const now = new Date().toISOString();
       const shouldArchiveWatchedListItem = patch.watched === true && current.inList;
       queryClient.setQueryData<TrackingEntry>(queryKey, {
         ...current,
         ...patch,
+        addedToListAt:
+          patch.inList === true && !current.inList
+            ? now
+            : current.addedToListAt,
         ...(shouldArchiveWatchedListItem
           ? { inList: false, archived: true }
           : {}),
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       });
       return { previous };
     },

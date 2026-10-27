@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         ? await getPopularMoviesPage(page, filters)
         : filters.mediaType === "tv"
           ? await getPopularTVShowsPage(page, filters)
-          : filters.sort
+          : filters.sort || filters.streamingProviderId
             ? await getPopularAllPage(page, filters)
             : await getTrendingAllPage(page, filters);
 

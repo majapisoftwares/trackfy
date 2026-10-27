@@ -3,9 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, LoaderCircle } from "lucide-react";
 import type { MediaItem, PaginatedMedia } from "@/src/lib/tmdb/types";
+import type { GameItem, GamePage } from "@/src/lib/rawg/types";
 import { MediaCard } from "./media-card";
+import { GameCard } from "./game-card";
 import { FixedBackdrop } from "./fixed-backdrop";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
+import { RawgAttribution } from "./rawg-attribution";
 
 function appendUniqueMedia(
   current: MediaItem[],
@@ -18,6 +21,11 @@ function appendUniqueMedia(
     (item) => !existingIds.has(`${item.mediaType}-${item.id}`),
   );
   return [...current, ...newItems];
+}
+
+function appendUniqueGames(current: GameItem[], incoming: GameItem[]): GameItem[] {
+  const existingIds = new Set(current.map((item) => item.id));
+  return [...current, ...incoming.filter((item) => !existingIds.has(item.id))];
 }
 
 export function SearchScreen({
@@ -34,8 +42,11 @@ export function SearchScreen({
   const [results, setResults] = useState<MediaItem[]>([]);
   const [searchPage, setSearchPage] = useState(1);
   const [searchTotalPages, setSearchTotalPages] = useState(1);
+  const [gameResults, setGameResults] = useState<GameItem[]>([]);
+  const [gameSearchPage, setGameSearchPage] = useState(1);
+  const [gameSearchTotal, setGameSearchTotal] = useState(0);
   const [loadingSearch, setLoadingSearch] = useState(false);
-  const [, setSearched] = useState(false);
+  const [pendingSearch, setPendingSearch] = useState(false);
 
   const [trendingItems, setTrendingItems] = useState<MediaItem[]>(initialMedia);
   const [trendingPage, setTrendingPage] = useState(1);
@@ -45,53 +56,64 @@ export function SearchScreen({
 
   const normalizedQuery = query.trim();
   const isSearchActive = normalizedQuery.length >= 2;
+  const isSearching = isSearchActive && (loadingSearch || pendingSearch);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   useEffect(() => {
-    if (initialMedia.length > 0) {
-      setTrendingItems(initialMedia);
-      setTrendingTotalPages(initialTotalPages);
-    }
-  }, [initialMedia, initialTotalPages]);
-
-  useEffect(() => {
-    if (!isSearchActive) {
-      setResults([]);
-      setLoadingSearch(false);
-      setSearched(false);
-      setSearchPage(1);
-      setSearchTotalPages(1);
-      return;
-    }
+    if (!isSearchActive) return;
 
     const controller = new AbortController();
-    setLoadingSearch(true);
 
     const timeout = window.setTimeout(async () => {
+      setLoadingSearch(true);
       try {
-        const searchParams = new URLSearchParams({
+        const mediaSearchParams = new URLSearchParams({
           query: normalizedQuery,
           page: "1",
         });
-        const response = await fetch(`/api/tmdb/search?${searchParams}`, {
-          signal: controller.signal,
+        const gameSearchParams = new URLSearchParams({
+          search: normalizedQuery,
+          page: "1",
+          pageSize: "20",
+          strictSearch: "1",
         });
-        if (!response.ok) throw new Error("Falha na pesquisa");
+        const [mediaResponse, gamesResponse] = await Promise.allSettled([
+          fetch(`/api/tmdb/search?${mediaSearchParams}`, { signal: controller.signal }),
+          fetch(`/api/games?${gameSearchParams}`, { signal: controller.signal }),
+        ]);
 
-        const data = (await response.json()) as PaginatedMedia;
-        setResults(data.results || []);
-        setSearchPage(data.page || 1);
-        setSearchTotalPages(data.totalPages || 1);
-        setSearched(true);
+        if (mediaResponse.status === "fulfilled" && mediaResponse.value.ok) {
+          const data = (await mediaResponse.value.json()) as PaginatedMedia;
+          setResults(data.results || []);
+          setSearchPage(data.page || 1);
+          setSearchTotalPages(data.totalPages || 1);
+        } else {
+          setResults([]);
+          setSearchPage(1);
+          setSearchTotalPages(1);
+        }
+
+        if (gamesResponse.status === "fulfilled" && gamesResponse.value.ok) {
+          const data = (await gamesResponse.value.json()) as GamePage;
+          setGameResults(data.results || []);
+          setGameSearchPage(data.page || 1);
+          setGameSearchTotal(data.count || 0);
+        } else {
+          setGameResults([]);
+          setGameSearchPage(1);
+          setGameSearchTotal(0);
+        }
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setResults([]);
+        setGameResults([]);
       } finally {
         if (!controller.signal.aborted) {
           setLoadingSearch(false);
+          setPendingSearch(false);
         }
       }
     }, 300);
@@ -103,25 +125,52 @@ export function SearchScreen({
   }, [normalizedQuery, isSearchActive]);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || loadingSearch) return;
+    if (loadingMore || isSearching) return;
 
     if (isSearchActive) {
-      if (searchPage >= searchTotalPages) return;
-      const nextPage = searchPage + 1;
+      const hasMoreMedia = searchPage < searchTotalPages;
+      const hasMoreGames = gameSearchPage * 20 < gameSearchTotal;
+      if (!hasMoreMedia && !hasMoreGames) return;
       setLoadingMore(true);
 
       try {
-        const searchParams = new URLSearchParams({
+        const mediaSearchParams = new URLSearchParams({
           query: normalizedQuery,
-          page: String(nextPage),
+          page: String(searchPage + 1),
         });
-        const response = await fetch(`/api/tmdb/search?${searchParams}`);
-        if (response.ok) {
-          const data = (await response.json()) as PaginatedMedia;
+        const gameSearchParams = new URLSearchParams({
+          search: normalizedQuery,
+          page: String(gameSearchPage + 1),
+          pageSize: "20",
+          strictSearch: "1",
+        });
+        const [mediaResponse, gamesResponse] = await Promise.all([
+          hasMoreMedia
+            ? fetch(`/api/tmdb/search?${mediaSearchParams}`)
+            : Promise.resolve(null),
+          hasMoreGames
+            ? fetch(`/api/games?${gameSearchParams}`)
+            : Promise.resolve(null),
+        ]);
+
+        if (mediaResponse?.ok) {
+          const data = (await mediaResponse.json()) as PaginatedMedia;
           setResults((prev) => appendUniqueMedia(prev, data.results || []));
-          setSearchPage(nextPage);
-          setSearchTotalPages(data.totalPages || nextPage);
+          setSearchPage(data.page || searchPage + 1);
+          setSearchTotalPages(data.totalPages || searchPage + 1);
+        } else if (hasMoreMedia) {
+          setSearchTotalPages(searchPage);
         }
+
+        if (gamesResponse?.ok) {
+          const data = (await gamesResponse.json()) as GamePage;
+          setGameResults((prev) => appendUniqueGames(prev, data.results || []));
+          setGameSearchPage(data.page || gameSearchPage + 1);
+          setGameSearchTotal(data.count || gameSearchPage * 20);
+        } else if (hasMoreGames) {
+          setGameSearchTotal(gameSearchPage * 20);
+        }
+
       } catch (error) {
         console.error("Erro ao carregar mais resultados de pesquisa", error);
       } finally {
@@ -150,10 +199,12 @@ export function SearchScreen({
     }
   }, [
     loadingMore,
-    loadingSearch,
+    isSearching,
     isSearchActive,
     searchPage,
     searchTotalPages,
+    gameSearchPage,
+    gameSearchTotal,
     normalizedQuery,
     trendingPage,
     trendingTotalPages,
@@ -179,8 +230,9 @@ export function SearchScreen({
   }, [loadMore]);
 
   const displayedItems = isSearchActive ? results : trendingItems;
+  const hasSearchResults = results.length > 0 || gameResults.length > 0;
   const hasMore = isSearchActive
-    ? searchPage < searchTotalPages
+    ? searchPage < searchTotalPages || gameSearchPage * 20 < gameSearchTotal
     : trendingPage < trendingTotalPages;
 
   const featuredBackdrop = displayedItems.find((item) => Boolean(item.backdropPath))?.backdropPath;
@@ -198,23 +250,28 @@ export function SearchScreen({
             ref={inputRef}
             type="text"
             className="search-main-input"
-            placeholder="Pesquisar séries e filmes..."
+            placeholder="Pesquisar filmes, séries e games..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Pesquisar séries e filmes"
+            onChange={(event) => {
+              const value = event.target.value;
+              setQuery(value);
+              setPendingSearch(value.trim().length >= 2);
+            }}
+            aria-label="Pesquisar filmes, séries e games"
           />
-          {loadingSearch && (
+          {isSearching && (
             <LoaderCircle
               className="search-bar-loading animate-spin"
               size={18}
             />
           )}
-          {!loadingSearch && query && (
+          {!isSearching && query && (
             <button
               type="button"
               className="search-bar-clear"
               onClick={() => {
                 setQuery("");
+                setPendingSearch(false);
                 inputRef.current?.focus();
               }}
               aria-label="Limpar pesquisa"
@@ -229,32 +286,47 @@ export function SearchScreen({
       <div className="search-results-heading">
         <h1 className="search-section-title">
           {isSearchActive
-            ? loadingSearch
+            ? isSearching
               ? `Pesquisando por "${query}"...`
-              : results.length > 0
+              : hasSearchResults
                 ? `Resultados para "${query}"`
                 : `Nenhum resultado para "${query}"`
             : "Principais pesquisas"}
         </h1>
         {!isSearchActive && (
           <p className="search-section-subtitle">
-            Os conteúdos e produções mais populares em alta no momento
+            Filmes, séries e produções mais populares em alta no momento
           </p>
         )}
       </div>
 
       {/* Content Grid */}
-      {displayedItems.length > 0 ? (
+      {(isSearchActive ? hasSearchResults : displayedItems.length > 0) ? (
         <>
-          <div className="search-media-grid">
-            {displayedItems.map((item) => (
-              <MediaCard
-                key={`${item.mediaType}-${item.id}`}
-                item={item}
-                showQuickActions
-              />
-            ))}
-          </div>
+          {displayedItems.length > 0 && (
+            <section className="search-result-group" aria-labelledby="media-results-title">
+              {isSearchActive && <h2 id="media-results-title">Filmes e séries</h2>}
+              <div className="search-media-grid">
+                {displayedItems.map((item) => (
+                  <MediaCard
+                    key={`${item.mediaType}-${item.id}`}
+                    item={item}
+                    showQuickActions
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {isSearchActive && gameResults.length > 0 && (
+            <section className="search-result-group" aria-labelledby="game-results-title">
+              <h2 id="game-results-title">Games</h2>
+              <div className="search-media-grid">
+                {gameResults.map((game) => <GameCard key={game.id} game={game} />)}
+              </div>
+              <RawgAttribution />
+            </section>
+          )}
 
           {/* Infinite Scroll Sentinel & Loader */}
           {hasMore && <div ref={sentinelRef} className="search-sentinel" />}
@@ -266,12 +338,11 @@ export function SearchScreen({
             </div>
           )}
         </>
-      ) : isSearchActive && !loadingSearch ? (
+      ) : isSearchActive && !isSearching ? (
         <div className="search-empty-state">
           <p className="search-empty-title">Nenhum título encontrado</p>
           <p className="search-empty-text">
-            Tente buscar com outras palavras-chave, título original ou nome de
-            atores.
+            Tente buscar por outro título, autor, ISBN ou palavra-chave.
           </p>
         </div>
       ) : null}

@@ -4,9 +4,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Footer } from "@/components/footer";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { GameCard } from "@/components/game-card";
 import { MediaRow } from "@/components/media-row";
 import { AUTH_COOKIE_NAME } from "@/src/lib/auth/session";
 import { findAuthUserBySessionToken } from "@/src/lib/auth/repository";
+import { listUserGames } from "@/src/lib/games/repository";
+import type { GameItem } from "@/src/lib/rawg/types";
 import { getMovieDetails, getTVShowDetails } from "@/src/lib/tmdb/endpoints";
 import { mapMovie, mapTVShow } from "@/src/lib/tmdb/mappers";
 import type { MediaItem } from "@/src/lib/tmdb/types";
@@ -100,10 +103,13 @@ export default async function ProfilePage() {
   const user = authToken ? await findAuthUserBySessionToken(authToken) : null;
   if (!user) redirect("/login");
 
-  const tracking = await listTrackingEntries(user.ownerId, {
-    limit: 1_000,
-    offset: 0,
-  });
+  const [tracking, userGames] = await Promise.all([
+    listTrackingEntries(user.ownerId, {
+      limit: 1_000,
+      offset: 0,
+    }),
+    listUserGames(user.ownerId),
+  ]);
   const entries = tracking.items;
   const rank = getUserRank(await getUserPoints(entries));
   const completedMovies = entries.filter(
@@ -114,7 +120,22 @@ export default async function ProfilePage() {
   );
   const history = entries
     .filter((entry) => entry.watched || entry.watchedEpisodes.length > 0)
-    .slice(0, 5);
+    .slice(0, 8);
+  const playingGames: GameItem[] = userGames
+    .filter((game) => game.status === "playing")
+    .slice(0, 6)
+    .map((game) => ({
+      id: game.gameId,
+      slug: game.slug,
+      name: game.name,
+      released: null,
+      backgroundImage: game.coverUrl,
+      rating: null,
+      ratingsCount: 0,
+      metacritic: null,
+      genres: [],
+      platforms: [],
+    }));
 
   const [watchStats, historyItems] = await Promise.all([
     Promise.all(entries.map(getWatchStats)),
@@ -192,6 +213,26 @@ export default async function ProfilePage() {
               <MediaRow items={historyItems} />
             ) : (
               <p className="profile-history-empty">Seu histórico aparecerá aqui quando você marcar conteúdos como assistidos.</p>
+            )}
+          </section>
+
+          <section className="profile-games" aria-labelledby="playing-games-title">
+            <div className="profile-history-head">
+              <div>
+                <h2 id="playing-games-title">Jogando</h2>
+                <p>Games que você está acompanhando agora</p>
+              </div>
+              <Link className="profile-history-all-button" href="/minha-lista">
+                Ver meus games
+                <ChevronRight aria-hidden="true" size={22} strokeWidth={2.25} />
+              </Link>
+            </div>
+            {playingGames.length > 0 ? (
+              <div className="media-row profile-games-row">
+                {playingGames.map((game) => <GameCard key={game.id} game={game} />)}
+              </div>
+            ) : (
+              <p className="profile-history-empty">Os games marcados como jogando aparecerão aqui.</p>
             )}
           </section>
         </section>
