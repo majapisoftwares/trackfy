@@ -8,7 +8,6 @@ import { MediaCard } from "./media-card";
 import { GameCard } from "./game-card";
 import { FixedBackdrop } from "./fixed-backdrop";
 import { getTMDBImageUrl } from "@/src/lib/tmdb/image";
-import { RawgAttribution } from "./rawg-attribution";
 
 function appendUniqueMedia(
   current: MediaItem[],
@@ -324,7 +323,6 @@ export function SearchScreen({
               <div className="search-media-grid">
                 {gameResults.map((game) => <GameCard key={game.id} game={game} />)}
               </div>
-              <RawgAttribution />
             </section>
           )}
 

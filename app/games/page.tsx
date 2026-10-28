@@ -6,13 +6,12 @@ import { Footer } from "@/components/footer";
 import { GamesCatalog } from "@/components/games-catalog";
 import { GameSection } from "@/components/game-section";
 import { GamePlatformsBanner } from "@/components/game-platforms-banner";
-import { RawgAttribution } from "@/components/rawg-attribution";
 import { findAuthUserBySessionToken } from "@/src/lib/auth/repository";
 import { AUTH_COOKIE_NAME } from "@/src/lib/auth/session";
 import { listUserGames } from "@/src/lib/games/repository";
 import { GAME_PLATFORM_FILTERS } from "@/src/lib/games/platforms";
 import type { UserGame } from "@/src/lib/games/types";
-import { getGamesPage } from "@/src/lib/rawg/endpoints";
+import { getGameItem, getGamesPage } from "@/src/lib/rawg/endpoints";
 import type { GameItem, GamePage } from "@/src/lib/rawg/types";
 
 export const metadata = {
@@ -80,14 +79,12 @@ export default async function GamesPage({ searchParams }: GamesPageProps) {
                   initialFilters={{ platform: selectedPlatform.rawgPlatforms }}
                   genres={[]}
                   pageSize={filteredGames.pageSize}
-                  showAttribution={false}
                 />
               ) : (
                 <div className="section-empty"><p>Não encontramos games para esta plataforma agora.</p></div>
               )}
             </section>
             <GamePlatformsBanner activePlatform={selectedPlatform.slug} />
-            <div className="container"><RawgAttribution /></div>
           </div>
         </DashboardShell>
         <Footer />
@@ -98,21 +95,33 @@ export default async function GamesPage({ searchParams }: GamesPageProps) {
   const authToken = (await cookies()).get(AUTH_COOKIE_NAME)?.value;
   const user = authToken ? await findAuthUserBySessionToken(authToken) : null;
   const today = new Date();
-  const threeMonthsAgo = new Date(today);
-  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-  const [library, publicGames, recentReleases] = await Promise.all([
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  const oneYearAhead = new Date(today);
+  oneYearAhead.setUTCFullYear(oneYearAhead.getUTCFullYear() + 1);
+  const [library, publicGames, upcomingReleases] = await Promise.all([
     user ? listUserGames(user.ownerId).catch(() => []) : Promise.resolve([]),
-    getGamesPage({ ordering: "-added", pageSize: 12 }).catch(() => emptyPage),
+    getGamesPage({ ordering: "-released", pageSize: 40, dates: `1900-01-01,${iso(today)}` }).catch(() => emptyPage),
     getGamesPage({
-      ordering: "-released",
+      ordering: "-added",
       pageSize: 12,
-      dates: `${iso(threeMonthsAgo)},${iso(today)}`,
+      dates: `${iso(tomorrow)},${iso(oneYearAhead)}`,
     }).catch(() => emptyPage),
   ]);
   const knownGameIds = new Set(library.map((game) => game.gameId));
-  const playing = library.filter((game) => game.status === "playing").map(toGameItem);
-  const wishlist = library.filter((game) => game.status === "wishlist").map(toGameItem);
-  const suggestions = publicGames.results.filter((game) => !knownGameIds.has(game.id));
+  const hydrateGames = (games: UserGame[]) => Promise.all(games.map(async (game, index) => {
+    const fallback = toGameItem(game);
+    if (index >= 8) return fallback;
+    const catalogGame = await getGameItem(game.slug).catch(() => null);
+    return { ...fallback, released: catalogGame?.released ?? null };
+  }));
+  const [playing, wishlist] = await Promise.all([
+    hydrateGames(library.filter((game) => game.status === "playing")),
+    hydrateGames(library.filter((game) => game.status === "wishlist")),
+  ]);
+  const suggestions = publicGames.results
+    .filter((game) => !knownGameIds.has(game.id))
+    .sort((a, b) => b.ratingsCount - a.ratingsCount || (b.released ?? "").localeCompare(a.released ?? ""));
 
   return (
     <>
@@ -143,13 +152,12 @@ export default async function GamesPage({ searchParams }: GamesPageProps) {
             emptyMessage="Não foi possível carregar sugestões de games agora."
           />
           <GameSection
-            id="ultimos-lancamentos"
-            title="Últimos lançamentos"
-            items={recentReleases.results.filter((game) => !knownGameIds.has(game.id))}
-            emptyMessage="Não foi possível carregar os últimos lançamentos agora."
+            id="proximos-lancamentos"
+            title="Próximos lançamentos"
+            items={upcomingReleases.results.filter((game) => !knownGameIds.has(game.id))}
+            emptyMessage="Não foi possível carregar os próximos lançamentos agora."
           />
           <GamePlatformsBanner />
-          <div className="container"><RawgAttribution /></div>
         </div>
       </DashboardShell>
       <Footer />

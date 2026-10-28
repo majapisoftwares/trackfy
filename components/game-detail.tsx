@@ -5,7 +5,6 @@ import type { GameDetails, GameItem } from "@/src/lib/rawg/types";
 import { FixedBackdrop } from "./fixed-backdrop";
 import { GameCard } from "./game-card";
 import { GameLibraryControls } from "./game-library-controls";
-import { RawgAttribution } from "./rawg-attribution";
 
 const list = (items: { name: string }[]) => items.map((item) => item.name).join(", ") || "Não informado";
 const date = (value: string | null) => value ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(`${value}T12:00:00`)) : "Não informada";
@@ -33,7 +32,6 @@ export function GameDetail({ game, related }: { game: GameDetails; related: Game
     <main className="container detail-body game-detail-body">
       {game.screenshots.length > 0 && <section className="game-screenshots"><h2>Capturas de tela</h2><div>{game.screenshots.slice(0, 8).map((src) => <div key={src}><img src={src} alt={`Captura de tela de ${game.name}`} /></div>)}</div></section>}
       {related.length > 0 && <section className="recommendations-section"><h2>Você também pode gostar</h2><div className="media-row game-row">{related.map((item) => <GameCard key={item.id} game={item} />)}</div></section>}
-      <RawgAttribution />
     </main>
   </>;
 }

@@ -52,6 +52,11 @@ export async function getGamesPage(filters: GameFilters = {}): Promise<GamePage>
   return { page, pageSize, count: data.count, results: data.results.map(mapGame) };
 }
 
+export async function getGameItem(slug: string): Promise<GameItem> {
+  const game = await rawgFetch<RawgGame>(`/games/${encodeURIComponent(slug)}`, {}, 60 * 60 * 6);
+  return mapGame(game);
+}
+
 export async function getGameDetails(slug: string): Promise<GameDetails> {
   const game = await rawgFetch<RawgGame>(`/games/${encodeURIComponent(slug)}`, {}, 60 * 60 * 6);
   const screenshots = await rawgFetch<{ results: Array<{ image?: string | null }> }>(
