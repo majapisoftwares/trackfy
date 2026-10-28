@@ -23,6 +23,7 @@ type TrackingEntryDocument = {
   watchLaterEpisodes: TrackedEpisode[];
   createdAt: Date;
   updatedAt: Date;
+  addedToListAt?: Date | null;
 };
 
 declare global {
@@ -43,6 +44,7 @@ async function getTrackingCollection(): Promise<
         { unique: true },
       ),
       collection.createIndex({ ownerId: 1, updatedAt: -1 }),
+      collection.createIndex({ ownerId: 1, inList: 1, addedToListAt: -1 }),
     ]);
   }
 
@@ -64,6 +66,7 @@ function toTrackingEntry(document: TrackingEntryDocument): TrackingEntry {
     watchLaterEpisodes: document.watchLaterEpisodes,
     createdAt: document.createdAt.toISOString(),
     updatedAt: document.updatedAt.toISOString(),
+    addedToListAt: document.addedToListAt?.toISOString() ?? null,
   };
 }
 
@@ -109,6 +112,7 @@ export async function listTrackingEntries(
     inList?: boolean;
     limit: number;
     offset: number;
+    sortBy?: "updatedAt" | "addedToListAt";
   },
 ): Promise<{ items: TrackingEntry[]; total: number }> {
   const collection = await getTrackingCollection();
@@ -121,7 +125,7 @@ export async function listTrackingEntries(
   const [documents, total] = await Promise.all([
     collection
       .find(filter)
-      .sort({ updatedAt: -1 })
+      .sort(options.sortBy === "addedToListAt" ? { addedToListAt: -1, updatedAt: -1 } : { updatedAt: -1 })
       .skip(options.offset)
       .limit(options.limit)
       .toArray(),
@@ -165,6 +169,7 @@ export async function updateTrackingEntry(
   // A title marked as watched is no longer actionable from the user's list.
   // Keep this invariant on the server so it also applies outside the detail UI.
   const shouldArchiveWatchedListItem = patch.watched === true && current?.inList;
+  const isAddingToList = patch.inList === true && current?.inList !== true;
   const setValues: Partial<TrackingEntryDocument> = {
     title: patch.title,
     updatedAt: now,
@@ -175,6 +180,7 @@ export async function updateTrackingEntry(
   if (patch.archived !== undefined) setValues.archived = patch.archived;
   if (patch.watched !== undefined) setValues.watched = patch.watched;
   if (patch.rating !== undefined) setValues.rating = patch.rating;
+  if (isAddingToList) setValues.addedToListAt = now;
   if (shouldArchiveWatchedListItem) {
     setValues.inList = false;
     setValues.archived = true;
@@ -193,6 +199,7 @@ export async function updateTrackingEntry(
         ...(patch.archived === undefined ? { archived: false } : {}),
         ...(patch.watched === undefined ? { watched: false } : {}),
         ...(patch.rating === undefined ? { rating: null } : {}),
+        ...(isAddingToList ? {} : { addedToListAt: null }),
         watchedEpisodes: [],
         watchLaterEpisodes: [],
         createdAt: now,

@@ -20,6 +20,7 @@ export type TrackingEntry = {
   watchLaterEpisodes: TrackedEpisode[];
   createdAt: string;
   updatedAt: string;
+  addedToListAt: string | null;
 };
 
 export type TrackingEntryPatch = {

@@ -1,4 +1,5 @@
 import type { CatalogFilters } from "./tmdb/endpoints";
+import { STREAMING_PROVIDERS } from "./streaming";
 
 export type CatalogSearchParams = Record<
   string,
@@ -20,6 +21,10 @@ function safeNumber(
     : undefined;
 }
 
+const STREAMING_PROVIDER_IDS = new Set<number>(
+  Object.values(STREAMING_PROVIDERS).map((provider) => provider.tmdbProviderId),
+);
+
 export function parseCatalogSearchParams(params: CatalogSearchParams) {
   const page = safeNumber(params.page, 1, 500) ?? 1;
   const values = {
@@ -29,7 +34,9 @@ export function parseCatalogSearchParams(params: CatalogSearchParams) {
     language: first(params.language),
     sort: first(params.sort),
     mediaType: first(params.mediaType),
+    streaming: first(params.streaming),
   };
+  const streamingProviderId = safeNumber(values.streaming, 1, 10_000);
   const filters: CatalogFilters = {
     genre: values.genre,
     year: safeNumber(values.year, 1900, new Date().getFullYear() + 5),
@@ -40,6 +47,9 @@ export function parseCatalogSearchParams(params: CatalogSearchParams) {
       values.mediaType === "movie" || values.mediaType === "tv"
         ? values.mediaType
         : undefined,
+    streamingProviderId: streamingProviderId && STREAMING_PROVIDER_IDS.has(streamingProviderId)
+      ? streamingProviderId
+      : undefined,
   };
 
   return { page, values, filters };

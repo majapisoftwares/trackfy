@@ -22,6 +22,7 @@ export default async function PopularSeriesPage({
       currentPage={data.page}
       totalPages={data.totalPages}
       filters={values}
+      showStreamingFilter
     />
   );
 }

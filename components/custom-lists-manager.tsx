@@ -25,7 +25,7 @@ export function CustomListsManager({ selectedListId }: { selectedListId?: string
   }
 
   return <section className="custom-lists-manager" aria-labelledby="custom-lists-title">
-    <div className="custom-lists-heading"><div><h2 id="custom-lists-title">Suas listas</h2><p>Crie coleções personalizadas para organizar seus conteúdos.</p></div><button type="button" onClick={() => setOpen((value) => !value)}><ListPlus size={17} /> Nova lista</button></div>
+    <div className="custom-lists-heading"><div><h2 id="custom-lists-title">Listas criadas</h2></div><div className="custom-lists-actions"><button type="button" onClick={() => setOpen((value) => !value)}><ListPlus size={17} /> Nova lista</button></div></div>
     {open && <div className="custom-list-create custom-list-create-page"><input value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void createList(); }} placeholder="Nome da lista" maxLength={60} autoFocus /><button type="button" disabled={!name.trim()} onClick={() => void createList()}><Plus size={16} /> Criar</button></div>}
     {lists.length > 0 && <div className="custom-lists-chips">{lists.map((list) => <Link className={selectedListId === list.id ? "is-selected" : ""} href={`/minha-lista?list=${encodeURIComponent(list.id)}`} key={list.id}>{list.name} <small>({list.items.length})</small></Link>)}</div>}
   </section>;
