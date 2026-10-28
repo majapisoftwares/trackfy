@@ -26,9 +26,9 @@ const platformVisuals = [
 
 export function GamePlatformsBanner({ activePlatform }: { activePlatform?: string }) {
   return (
-    <section className="game-platforms-banner container" aria-labelledby="platformas-principais">
+    <section className="content-section game-platforms-banner container" aria-labelledby="platformas-principais">
       <div className="game-platforms-heading">
-        <h2 id="platformas-principais">Principais plataformas</h2>
+        <h2 id="platformas-principais" className="section-title">Principais plataformas</h2>
         {activePlatform && <Link href="/games" className="game-platforms-clear">Limpar filtro</Link>}
       </div>
       <ul>

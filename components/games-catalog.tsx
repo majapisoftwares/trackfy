@@ -4,12 +4,11 @@ import { LoaderCircle, Search } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GameItem, GamePage, RawgNamedItem } from "@/src/lib/rawg/types";
 import { GameCard } from "./game-card";
-import { RawgAttribution } from "./rawg-attribution";
 import type { GameCatalogFilterValues } from "./game-catalog-filters";
 
 const PLATFORMS = [{ value: "4", label: "PC" }, { value: "187", label: "PlayStation 5" }, { value: "18", label: "PlayStation 4" }, { value: "1", label: "Xbox One" }, { value: "7", label: "Nintendo Switch" }];
 
-export function GamesCatalog({ initialItems, genres, embedded = false, initialPage = 1, initialTotal = initialItems.length, initialFilters = {}, pageSize = 20, showAttribution = true }: { initialItems: GameItem[]; genres: RawgNamedItem[]; embedded?: boolean; initialPage?: number; initialTotal?: number; initialFilters?: GameCatalogFilterValues; pageSize?: number; showAttribution?: boolean }) {
+export function GamesCatalog({ initialItems, genres, embedded = false, initialPage = 1, initialTotal = initialItems.length, initialFilters = {}, pageSize = 20 }: { initialItems: GameItem[]; genres: RawgNamedItem[]; embedded?: boolean; initialPage?: number; initialTotal?: number; initialFilters?: GameCatalogFilterValues; pageSize?: number }) {
   const [items, setItems] = useState(initialItems); const [search, setSearch] = useState(initialFilters.search ?? "");
   const [genre, setGenre] = useState(initialFilters.genre ?? ""); const [platform, setPlatform] = useState(initialFilters.platform ?? ""); const [year, setYear] = useState(initialFilters.year ?? ""); const [rating, setRating] = useState(initialFilters.rating ?? "");
   const [page, setPage] = useState(initialPage); const [loading, setLoading] = useState(false); const [error, setError] = useState(false); const [hasMore, setHasMore] = useState(initialPage * pageSize < initialTotal);
@@ -50,6 +49,5 @@ export function GamesCatalog({ initialItems, genres, embedded = false, initialPa
     </div>}
     {loading ? <div className="games-loading"><LoaderCircle className="animate-spin" size={20} /> Carregando jogos...</div> : error ? <p className="section-empty">Não foi possível carregar os jogos. Tente novamente.</p> : items.length ? <div className="catalog-grid">{items.map((game) => <GameCard key={game.id} game={game} />)}</div> : <p className="section-empty">Nenhum jogo encontrado com estes critérios.</p>}
     {hasMore && <div ref={sentinelRef} className="infinite-scroll-sentinel">{loading && <div className="infinite-scroll-loader"><LoaderCircle className="animate-spin" size={24} aria-hidden="true" /><span>Carregando mais jogos...</span></div>}</div>}
-    {showAttribution && <RawgAttribution />}
   </section>;
 }

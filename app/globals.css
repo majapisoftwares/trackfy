@@ -7945,6 +7945,14 @@ a {
 
 /* Games extends the catalog and detail primitives without altering existing views. */
 .games-page-stack { padding-top: 36px; padding-bottom: 80px; }
+@media (min-width:901px) {
+  #games-em-alta { container-type:inline-size; }
+  @container (max-width:1351px) { #games-em-alta .game-row > :nth-child(n+8) { display:none; } }
+  @container (max-width:1180px) { #games-em-alta .game-row > :nth-child(n+7) { display:none; } }
+  @container (max-width:1009px) { #games-em-alta .game-row > :nth-child(n+6) { display:none; } }
+  @container (max-width:838px) { #games-em-alta .game-row > :nth-child(n+5) { display:none; } }
+  @container (max-width:667px) { #games-em-alta .game-row > :nth-child(n+4) { display:none; } }
+}
 .game-platform-results { padding-top:8px; }
 .game-platform-back { display:inline-flex; margin-bottom:14px; color:var(--muted-foreground); font-size:13px; font-weight:600; text-decoration:underline; text-underline-offset:3px; }
 .game-platform-back:hover { color:#fff; }
@@ -7952,7 +7960,6 @@ a {
 .game-platform-results-grid { padding-bottom:4px; }
 .game-platforms-banner { margin-top:2px; }
 .game-platforms-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
-.game-platforms-banner h2 { margin:0; color:#fff; font-size:20px; letter-spacing:-.02em; }
 .game-platforms-clear { color:var(--muted-foreground); font-size:13px; font-weight:600; text-decoration:underline; text-underline-offset:3px; }
 .game-platforms-clear:hover { color:#fff; }
 .game-platforms-banner ul { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0; padding:0; list-style:none; }
@@ -7988,8 +7995,6 @@ a {
 .games-pagination { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:32px; color:var(--muted-foreground); font-size:13px; }
 .games-pagination button { min-height:36px; border:1px solid rgba(255,255,255,.15); border-radius:999px; background:rgba(255,255,255,.06); color:#fff; padding:0 15px; font:inherit; cursor:pointer; }
 .games-pagination button:disabled { cursor:not-allowed; opacity:.4; }
-.rawg-attribution { margin:20px 0 0; color:var(--muted-foreground); font-size:11px; text-align:right; }
-.rawg-attribution a { color:inherit; text-decoration:underline; text-underline-offset:2px; }
 .game-detail-hero .detail-synopsis { max-width:690px; }
 .game-library-controls { width:min(100%,680px); }
 .game-status-actions { display:flex; flex-wrap:wrap; gap:9px; }
